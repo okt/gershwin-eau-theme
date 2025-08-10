@@ -514,10 +514,23 @@ static NSMutableSet *defaultButtonSetCells = nil;
         RIKLOG(@"NSButtonCell+Rik: Marking button %p as needing display", button);
         [button setNeedsDisplay:YES];
         
-        // DO NOT make it first responder to avoid stealing focus from text fields
-        RIKLOG(@"NSButtonCell+Rik: Skipping makeFirstResponder to preserve text field focus");
+        // Make this button the first responder ONLY if the current first responder is already a button
+        NSWindow *window = [button window];
+        if (window) {
+          NSResponder *currentFirstResponder = [window firstResponder];
+          RIKLOG(@"NSButtonCell+Rik: Current first responder: %p (class: %@)", currentFirstResponder, [currentFirstResponder class]);
+          
+          if (currentFirstResponder && [currentFirstResponder isKindOfClass:[NSButton class]]) {
+            RIKLOG(@"NSButtonCell+Rik: Current first responder is a button, making default button %p first responder", button);
+            [window makeFirstResponder:button];
+          } else {
+            RIKLOG(@"NSButtonCell+Rik: Current first responder is not a button (%@), preserving focus", [currentFirstResponder class]);
+          }
+        } else {
+          RIKLOG(@"NSButtonCell+Rik: No window found for button %p", button);
+        }
         
-        RIKLOG(@"NSButtonCell+Rik: Successfully configured button %p without taking focus", button);
+        RIKLOG(@"NSButtonCell+Rik: Successfully configured button %p with conditional focus", button);
       }
       @catch (NSException *buttonException) {
         RIKLOG(@"NSButtonCell+Rik: ERROR setting button %p properties: %@", button, buttonException);
