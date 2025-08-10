@@ -37,6 +37,7 @@
   if (defaultbuttoncell && progress >= 1.0)
   {
     reverse = !reverse;
+    RIKLOG(@"DefaultButtonAnimation: Reversing direction and restarting animation");
     [self startAnimation];
   }
 }
@@ -58,17 +59,22 @@
 @synthesize animation;
 - (id) initWithButtonCell: (NSButtonCell*) cell
 {
+  RIKLOG(@"DefaultButtonAnimationController: initWithButtonCell called with cell %p", cell);
   if (self = [super init]) {
     buttoncell = cell;
+    RIKLOG(@"DefaultButtonAnimationController: Successfully initialized with cell %p", cell);
   }
   return self;
 }
 - (void) startPulse
 {
+  RIKLOG(@"DefaultButtonAnimationController: startPulse called for cell %p", buttoncell);
   [self startPulse: NO];
 }
 - (void) startPulse: (BOOL) reverse
 {
+  RIKLOG(@"DefaultButtonAnimationController: startPulse:reverse called with reverse=%d for cell %p", reverse, buttoncell);
+  
   animation = [[DefaultButtonAnimation alloc] initWithDuration:0.7
                                 animationCurve:NSAnimationEaseInOut];
   animation.reverse = reverse;
@@ -77,7 +83,10 @@
   [animation setFrameRate:30.0];
   [animation setAnimationBlockingMode:NSAnimationNonblocking];
   animation.defaultbuttoncell = buttoncell;
+  
+  RIKLOG(@"DefaultButtonAnimationController: Starting animation %p for cell %p", animation, buttoncell);
   [animation startAnimation];
+  RIKLOG(@"DefaultButtonAnimationController: Animation started for cell %p", buttoncell);
 }
 - (void)animation:(NSAnimation *)a
             didReachProgressMark:(NSAnimationProgress)progress
@@ -170,6 +179,8 @@
 
 - (void) RIKsetDefaultButtonCell: (NSButtonCell *)aCell
 {
+  RIKLOG(@"NSWindow+Rik: RIKsetDefaultButtonCell called with cell %p", aCell);
+  
   ASSIGN(_defaultButtonCell, aCell);
   [self enableKeyEquivalentForDefaultButtonCell];
 
@@ -177,9 +188,16 @@
   [aCell setKeyEquivalentModifierMask: 0];
   [aCell setIsDefaultButton: [NSNumber numberWithBool: YES]];
 
+  RIKLOG(@"NSWindow+Rik: Creating DefaultButtonAnimationController for cell %p", aCell);
   DefaultButtonAnimationController * animationcontroller = [[DefaultButtonAnimationController alloc] initWithButtonCell: aCell];
+  
+  RIKLOG(@"NSWindow+Rik: Setting window delegate to animation controller %p", animationcontroller);
   [self setDelegate:animationcontroller];
+  
+  RIKLOG(@"NSWindow+Rik: Starting pulse animation for cell %p", aCell);
   [animationcontroller startPulse];
+  
+  RIKLOG(@"NSWindow+Rik: Default button cell setup completed for cell %p", aCell);
 }
 
 - (void) animateDefaultButton: (id)sender

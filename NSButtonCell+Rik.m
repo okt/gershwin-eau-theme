@@ -468,31 +468,20 @@ static NSMutableSet *defaultButtonSetCells = nil;
   RIKLOG(@"NSButtonCell+Rik: safelyMakeButtonSelectedAndHighlighted called for button cell %p", self);
   
   @try {
-    // First, try to set cell-level properties to make it appear selected
-    @try {
-      if ([self respondsToSelector:@selector(setState:)]) {
-        RIKLOG(@"NSButtonCell+Rik: Setting cell %p state to NSOnState", self);
-        [self setState:NSOnState];
-      }
-      
-      if ([self respondsToSelector:@selector(setHighlighted:)]) {
-        RIKLOG(@"NSButtonCell+Rik: Setting cell %p as highlighted", self);
-        [self setHighlighted:YES];
-      }
-      
-      if ([self respondsToSelector:@selector(setShowsFirstResponder:)]) {
-        RIKLOG(@"NSButtonCell+Rik: Setting cell %p to show first responder", self);
-        [self setShowsFirstResponder:YES];
-      }
-      
-    RIKLOG(@"NSButtonCell+Rik: Successfully set cell %p properties", self);
+    // DON'T set the cell as highlighted permanently - this interferes with pressed state detection
+    // The default button appearance will come from the pulsing animation instead
+    RIKLOG(@"NSButtonCell+Rik: Skipping setHighlighted to allow proper pressed state detection");
+    
+    // DON'T set setShowsFirstResponder to avoid interfering with text field focus
+
   }
   @catch (NSException *cellException) {
     RIKLOG(@"NSButtonCell+Rik: ERROR setting cell %p properties: %@", self, cellException);
   }
     
-    // Try to get the control view safely
-    NSView *controlView = nil;
+  // Try to get the control view safely
+  NSView *controlView = nil;
+  @try {
     if ([self respondsToSelector:@selector(controlView)]) {
       controlView = [self controlView];
       RIKLOG(@"NSButtonCell+Rik: Found control view %p for button cell %p", controlView, self);
@@ -504,13 +493,12 @@ static NSMutableSet *defaultButtonSetCells = nil;
       NSButton *button = (NSButton *)controlView;
       RIKLOG(@"NSButtonCell+Rik: Control view is NSButton %p for cell %p", button, self);
       
-      // Make the button highlighted/selected with crash protection
+      // Make the button highlighted with crash protection but without taking focus
       @try {
-        RIKLOG(@"NSButtonCell+Rik: Setting button %p state to NSOnState", button);
-        [button setState:NSOnState];
+
         
-        // NSButton doesn't have setHighlighted:, use setKeyEquivalent and other properties instead
-        RIKLOG(@"NSButtonCell+Rik: Setting button %p properties for visual highlighting", button);
+        // Set as key equivalent for Enter/Return key handling but don't take focus
+        RIKLOG(@"NSButtonCell+Rik: Setting button %p properties for Return key handling", button);
         
         // Try to set as key equivalent if possible
         if ([button respondsToSelector:@selector(setKeyEquivalent:)]) {
@@ -518,30 +506,18 @@ static NSMutableSet *defaultButtonSetCells = nil;
           [button setKeyEquivalent:@"\r"];
         }
         
-        // Force the button cell to be highlighted
-        NSButtonCell *buttonCell = [button cell];
-        if (buttonCell && [buttonCell respondsToSelector:@selector(setHighlighted:)]) {
-          RIKLOG(@"NSButtonCell+Rik: Setting button cell %p as highlighted via button", buttonCell);
-          [buttonCell setHighlighted:YES];
-        }
+        // DON'T force the button cell to be highlighted - this interferes with pressed state detection
+        // The default button appearance will come from the pulsing animation instead
+        RIKLOG(@"NSButtonCell+Rik: Skipping setHighlighted to preserve pressed state detection");
         
         // Force the button to redraw to show changes
         RIKLOG(@"NSButtonCell+Rik: Marking button %p as needing display", button);
         [button setNeedsDisplay:YES];
         
-        // Try to make it the window's first responder for focus ring
-        NSWindow *window = [button window];
-        if (window && [window respondsToSelector:@selector(makeFirstResponder:)]) {
-          @try {
-            RIKLOG(@"NSButtonCell+Rik: Making button %p first responder in window %p", button, window);
-            [window makeFirstResponder:button];
-          }
-          @catch (NSException *responderException) {
-            RIKLOG(@"NSButtonCell+Rik: ERROR making button %p first responder: %@", button, responderException);
-          }
-        }
+        // DO NOT make it first responder to avoid stealing focus from text fields
+        RIKLOG(@"NSButtonCell+Rik: Skipping makeFirstResponder to preserve text field focus");
         
-        RIKLOG(@"NSButtonCell+Rik: Successfully made button %p selected and highlighted", button);
+        RIKLOG(@"NSButtonCell+Rik: Successfully configured button %p without taking focus", button);
       }
       @catch (NSException *buttonException) {
         RIKLOG(@"NSButtonCell+Rik: ERROR setting button %p properties: %@", button, buttonException);
