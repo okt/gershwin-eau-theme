@@ -312,6 +312,7 @@
 // TS: forward dec
 @interface NSWindow(RikTheme)
 - (void) RIKsetDefaultButtonCell: (NSButtonCell *)aCell;
+- (void) RIKcenter;
 @end
 
 @implementation Rik(NSWindow)
@@ -374,6 +375,14 @@
   NSWindow *xself = (NSWindow*)self;
   [xself RIKsetDefaultButtonCell:aCell];
 }
+
+// Override the center method to position windows using golden ratio
+- (void) _overrideNSWindowMethod_center {
+  RIKLOG(@"_overrideNSWindowMethod_center: Positioning window with golden ratio");
+  NSWindow *xself = (NSWindow*)self;
+  [xself RIKcenter];
+}
+
 @end
 
 @implementation NSWindow(RikTheme)
@@ -405,5 +414,60 @@
 {
 }
 
-@end
+// Golden ratio positioning method
+- (void) RIKcenter
+{
+  RIKLOG(@"NSWindow+Rik: RIKcenter called - applying golden ratio positioning");
+  
+  NSScreen *screen = [self screen];
+  if (!screen) {
+    screen = [NSScreen mainScreen];
+  }
+  
+  if (!screen) {
+    RIKLOG(@"NSWindow+Rik: No screen available, using standard center");
+    [self center];
+    return;
+  }
+  
+  NSRect screenFrame = [screen visibleFrame];
+  NSRect windowFrame = [self frame];
+  
+  RIKLOG(@"NSWindow+Rik: Screen frame: %@", NSStringFromRect(screenFrame));
+  RIKLOG(@"NSWindow+Rik: Window frame: %@", NSStringFromRect(windowFrame));
+  
+  // Golden ratio ≈ 1.618, inverse ≈ 0.618
+  // Position the window vertically at the golden ratio point
+  const CGFloat goldenRatio = 1.618033988749;
+  const CGFloat goldenRatioInverse = 1.0 / goldenRatio; // ≈ 0.618
+  
+  // Calculate horizontal center (keep this centered)
+  CGFloat x = screenFrame.origin.x + (screenFrame.size.width - windowFrame.size.width) / 2.0;
+  
+  // Calculate vertical position using golden ratio
+  // Position the window so that the ratio of space above to space below follows golden ratio
+  // This places the window slightly above center, which is more visually pleasing
+  CGFloat availableHeight = screenFrame.size.height - windowFrame.size.height;
+  CGFloat y = screenFrame.origin.y + availableHeight * goldenRatioInverse;
+  
+  // Ensure the window stays within screen bounds
+  if (x < screenFrame.origin.x) {
+    x = screenFrame.origin.x;
+  } else if (x + windowFrame.size.width > screenFrame.origin.x + screenFrame.size.width) {
+    x = screenFrame.origin.x + screenFrame.size.width - windowFrame.size.width;
+  }
+  
+  if (y < screenFrame.origin.y) {
+    y = screenFrame.origin.y;
+  } else if (y + windowFrame.size.height > screenFrame.origin.y + screenFrame.size.height) {
+    y = screenFrame.origin.y + screenFrame.size.height - windowFrame.size.height;
+  }
+  
+  NSRect newFrame = NSMakeRect(x, y, windowFrame.size.width, windowFrame.size.height);
+  
+  RIKLOG(@"NSWindow+Rik: New window frame with golden ratio: %@", NSStringFromRect(newFrame));
+  
+  [self setFrame:newFrame display:YES];
+}
 
+@end
