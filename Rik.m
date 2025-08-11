@@ -2,6 +2,7 @@
 
 #import <AppKit/AppKit.h>
 #import <GNUstepGUI/GSWindowDecorationView.h>
+#import "NSMenuItemCell+Rik.h"
 
 // add this declaration to quiet the compiler
 @interface Rik(RikButton)
