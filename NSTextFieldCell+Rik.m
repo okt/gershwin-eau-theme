@@ -14,6 +14,7 @@
 
 @interface NSTextFieldCell (RikTheme)
 - (void) RIKdrawInteriorWithFrame: (NSRect)cellFrame inView: (NSView*)controlView;
+- (void) RIKdrawWithFrame: (NSRect)cellFrame inView: (NSView*)controlView;
 - (void) RIKselectWithFrame: (NSRect)aRect
                   inView: (NSView*)controlView
                   editor: (NSText*)textObject
@@ -34,6 +35,12 @@
   RIKLOG(@"_overrideNSTextFieldCellMethod_drawInteriorWithFrame:inView:");
   NSTextFieldCell *xself = (NSTextFieldCell*)self;
   [xself RIKdrawInteriorWithFrame:cellFrame inView:controlView];
+}
+
+- (void) _overrideNSTextFieldCellMethod_drawWithFrame: (NSRect)cellFrame inView: (NSView*)controlView {
+  RIKLOG(@"_overrideNSTextFieldCellMethod_drawWithFrame:inView:");
+  NSTextFieldCell *xself = (NSTextFieldCell*)self;
+  [xself RIKdrawWithFrame:cellFrame inView:controlView];
 }
 
 - (void) _overrideNSTextFieldCellMethod__drawEditorWithFrame: (NSRect)cellFrame
@@ -76,30 +83,44 @@
 
 @implementation NSTextFieldCell (RikTheme)
 
+- (void) RIKdrawWithFrame: (NSRect)cellFrame inView: (NSView*)controlView
+{
+  RIKLOG(@"RIKdrawWithFrame: in_editing=%d", _cell.in_editing);
+  
+  if (_cell.in_editing)
+    {
+      RIKLOG(@"RIKdrawWithFrame: In editing mode - skipping all background drawing for transparency");
+      /* When editing, don't draw anything - this prevents the white background */
+      return;
+    }
+  else
+    {
+      RIKLOG(@"RIKdrawWithFrame: Drawing in normal mode - calling super");
+      /* Call the original implementation for normal drawing */
+      [super drawWithFrame:cellFrame inView:controlView];
+    }
+}
+
 - (void) RIKdrawInteriorWithFrame: (NSRect)cellFrame inView: (NSView*)controlView
 {
 	NSRect titleRect;
 	cellFrame.origin.y -= 1;
 	cellFrame.size.height += 2;
-	//cellFrame.size.width -= 1;
-	[self _drawEditorWithFrame: cellFrame inView: controlView];
+	
+	RIKLOG(@"RIKdrawInteriorWithFrame: in_editing=%d", _cell.in_editing);
+	
   if (_cell.in_editing)
   {
-	cellFrame.origin.y -= 1;
-	cellFrame.size.height += 2;
-	//cellFrame.size.width -=10 ;
-
-	[self _drawEditorWithFrame: cellFrame inView: controlView];
-	//titleRect = [self titleRectForBounds: cellFrame];
-	//titleRect.origin.y -= 10;
+	RIKLOG(@"RIKdrawInteriorWithFrame: In editing mode - skipping all drawing for transparent background");
+	/* When editing, don't draw anything in the cell - let the text editor handle everything
+	 * This creates the transparent background effect */
+	return;
   }
   else
     {
-      //NSRect titleRect;
+      RIKLOG(@"RIKdrawInteriorWithFrame: Drawing in normal mode");
 	cellFrame.origin.y-= 1;
 	cellFrame.size.height += 2;
-	//cellFrame.size.width -= 10;
-	//[self _drawEditorWithFrame: cellFrame inView: controlView];
 
        /*Make sure we are a text cell; titleRect might return an incorrect
          rectangle otherwise. Note that the type could be different if the
@@ -107,10 +128,7 @@
          well).*/ 
       _cell.type = NSTextCellType;
       titleRect = [self titleRectForBounds: cellFrame];
-	//titleRect.origin.y -= 1;
-	//titleRect.size.height += 2;
       [[self _drawAttributedString] drawInRect: titleRect];
-	//[self _drawEditorWithFrame: cellFrame inView: controlView];
 
     }
 /*_cell.type = NSTextCellType;
@@ -174,38 +192,46 @@ titleRect.size.height += 2;
 - (void) _RIKdrawEditorWithFrame: (NSRect)cellFrame
                          inView: (NSView*)controlView
 {
-  RIKLOG(@"_RIKdrawEditorWithFrame:inView: - Setting transparent background for text editing");
+  RIKLOG(@"_RIKdrawEditorWithFrame:inView: - Setting up editor frame for transparent background");
   
   if ([controlView isKindOfClass: [NSControl class]])
     {
-      /* Adjust the text editor's frame to match cell's frame (w/o border) */
+      /* Don't draw any cell background when editing - this allows transparency */
+      if (_cell.in_editing)
+        {
+          RIKLOG(@"_RIKdrawEditorWithFrame: In editing mode - skipping background drawing for transparency");
+          /* Just adjust the editor frame and let it handle its own drawing */
+          NSRect titleRect = [self titleRectForBounds: cellFrame];
+          NSText *textObject = [(NSControl*)controlView currentEditor];
+          NSView *clipView = [textObject superview];
+          
+          if ([clipView isKindOfClass: [NSClipView class]])
+            {
+              [clipView setFrame: titleRect];
+            }
+          else if (textObject != nil)
+            {
+              [textObject setFrame: titleRect];
+            }
+          
+          return; /* Exit early - don't call super to avoid background drawing */
+        }
+      
+      /* For non-editing mode, use standard behavior */
       NSRect titleRect = [self titleRectForBounds: cellFrame];
       NSText *textObject = [(NSControl*)controlView currentEditor];
       NSView *clipView = [textObject superview];
 
       RIKLOG(@"_RIKdrawEditorWithFrame: textObject=%@, clipView=%@", textObject, clipView);
       
-      /* Set transparent background for the text editor */
-      if (textObject != nil)
-        {
-          RIKLOG(@"_RIKdrawEditorWithFrame: Setting text editor background to transparent");
-          [textObject setBackgroundColor: [NSColor clearColor]];
-          [textObject setDrawsBackground: YES];
-        }
-      
-      /* Set transparent background for the clip view if it exists */
       if ([clipView isKindOfClass: [NSClipView class]])
-	{
-          RIKLOG(@"_RIKdrawEditorWithFrame: Setting clip view background to transparent and adjusting frame");
-	  [clipView setFrame: titleRect];
-          [(NSClipView*)clipView setBackgroundColor: [NSColor clearColor]];
-          [(NSClipView*)clipView setDrawsBackground: YES];
-	}
+        {
+          [clipView setFrame: titleRect];
+        }
       else if (textObject != nil)
-	{
-          RIKLOG(@"_RIKdrawEditorWithFrame: Setting text object frame directly");
-	  [textObject setFrame: titleRect];
-	}
+        {
+          [textObject setFrame: titleRect];
+        }
     }
 }
 
