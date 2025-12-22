@@ -4,9 +4,9 @@
 
 // To enable debugging messages in the _overrideClassMethod_foo mechanism
 #if 1
-#define RIKLOG(args...) NSLog(args)
+#define RIKLOG(args...) NSDebugLog(args)
 #else
-#define RIKLOG(args...) 
+#define RIKLOG(args...)
 #endif
 
 @interface Rik: GSTheme
