@@ -19,16 +19,23 @@ static CGFloat swizzled_titleWidth(id self, SEL _cmd) {
   return paddedWidth;
 }
 
-// Our replacement titleRectForBounds: method - shifts title right by half the padding
+// Our replacement titleRectForBounds: method - shifts title right to center in padded space
 static NSRect swizzled_titleRectForBounds(id self, SEL _cmd, NSRect cellFrame) {
   // Call original implementation
   NSRect originalRect = ((NSRect (*)(id, SEL, NSRect))originalTitleRectForBoundsIMP)(self, _cmd, cellFrame);
   
-  // Shift the title rect right by half the padding to center text
-  originalRect.origin.x += (RIK_MENU_ITEM_PADDING / 2.0);
+  NSMenuItemCell *cell = (NSMenuItemCell *)self;
+  NSMenuView *menuView = [cell menuView];
   
-  NSLog(@"NSMenuItemCell+Rik: swizzled_titleRectForBounds - shifted x by %.0f, new x: %.1f", 
-         (RIK_MENU_ITEM_PADDING / 2.0), originalRect.origin.x);
+  if (menuView) {
+    if ([menuView isHorizontal]) {
+      // Horizontal menu bar items - shift by half padding to center
+      originalRect.origin.x += (RIK_MENU_ITEM_PADDING / 2.0);
+    } else {
+      // Vertical dropdown items - shift by half padding to center
+      originalRect.origin.x += (RIK_MENU_ITEM_PADDING / 2.0);
+    }
+  }
   
   return originalRect;
 }
