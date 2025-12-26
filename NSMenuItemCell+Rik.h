@@ -5,5 +5,4 @@
 @interface NSMenuItemCell (RikTheme)
 - (void) RIKdrawKeyEquivalentWithFrame: (NSRect)cellFrame inView: (NSView*)controlView;
 - (NSString*) RIKconvertKeyEquivalentToMacStyle: (NSString*)keyEquivalent withModifiers: (NSUInteger)modifierMask;
-- (NSRect) RIKdrawingRectForBounds: (NSRect)theRect;
 @end
