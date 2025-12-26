@@ -25,7 +25,8 @@
 }
 - (CGFloat) menuSubmenuHorizontalOverlap
 {
-  return 3;
+  // Set to 0 so submenu just touches the parent menu without overlapping
+  return 0;
 }
 -(CGFloat) menuSubmenuVerticalOverlap
 {
@@ -50,6 +51,24 @@
   NSUserDefaults *theme_defaults = [NSUserDefaults standardUserDefaults];
   BOOL MenuShouldShowIcon =   [theme_defaults boolForKey:@"MenuShouldShowIcon"]; 
   return MenuShouldShowIcon;
+}
+
+// Returns the left border offset for menu items.
+// This is used by the theme system to calculate horizontal spacing and positioning
+// of menu item content. The value is half of RIK_MENU_ITEM_PADDING to provide
+// equal padding on both sides of the menu item.
+- (CGFloat) menuItemLeftBorderOffset
+{
+  return RIK_MENU_ITEM_PADDING / 2.0;
+}
+
+// Returns the right border offset for menu items.
+// This is used by the theme system to calculate horizontal spacing and positioning
+// of menu item content. The value is half of RIK_MENU_ITEM_PADDING to provide
+// equal padding on both sides of the menu item.
+- (CGFloat) menuItemRightBorderOffset
+{
+  return RIK_MENU_ITEM_PADDING / 2.0;
 }
 
 - (void) drawMenuRect: (NSRect)rect
@@ -84,17 +103,13 @@
   else
     {
       // here the vertical menus
-      CGFloat radius = 6;
-      menuPath = [NSBezierPath bezierPathWithRoundedRect: bounds
-                                                 xRadius: radius
-                                                 yRadius: radius];
+      menuPath = [NSBezierPath bezierPathWithRect: bounds];
 
       [[self menuBackgroundColor] setFill];
       [menuPath fill];
 
-      NSBezierPath * strokemenuPath = [NSBezierPath bezierPathWithRoundedRect: bounds
-                                                 xRadius: radius
-                                                 yRadius: radius];
+      NSBezierPath * strokemenuPath = [NSBezierPath bezierPathWithRect: bounds];
+      [borderColor setStroke];
       [strokemenuPath stroke];
     }
   // Draw the menu cells.
@@ -128,11 +143,7 @@
 
   NSRect r = NSIntersectionRect(bounds, dirtyRect);
   NSRectFillUsingOperation(r, NSCompositeClear);
-  NSBezierPath * roundedRectanglePath = [NSBezierPath bezierPathWithRoundedRect:r  xRadius: 4 yRadius: 4];
-  //NSColor *borderColor = [self menuBorderColor];
-  //[borderColor setStroke];
-  [roundedRectanglePath fill];
-  [roundedRectanglePath stroke];
+  NSRectFill(r);
 }
 
 - (void) drawBorderAndBackgroundForMenuItemCell: (NSMenuItemCell *)cell
@@ -153,7 +164,6 @@
                                                                endingColor: selectedBackgroundColor2];
   NSColor * c;
   [cell setBordered:NO];
-  cellFrame = [cell drawingRectForBounds: cellFrame];
 
   if(isHorizontal)
   {
@@ -161,7 +171,7 @@
   }
   if (state == GSThemeSelectedState || state == GSThemeHighlightedState)
     {
-
+      // Draw highlight on full cell frame (including padding)
       NSRectFillUsingOperation(cellFrame, NSCompositeClear);
       [menuitemgradient drawInRect:cellFrame angle: -90];
       return;
