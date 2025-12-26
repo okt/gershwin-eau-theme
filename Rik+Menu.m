@@ -53,11 +53,19 @@
   return MenuShouldShowIcon;
 }
 
+// Returns the left border offset for menu items.
+// This is used by the theme system to calculate horizontal spacing and positioning
+// of menu item content. The value is half of RIK_MENU_ITEM_PADDING to provide
+// equal padding on both sides of the menu item.
 - (CGFloat) menuItemLeftBorderOffset
 {
   return RIK_MENU_ITEM_PADDING / 2.0;
 }
 
+// Returns the right border offset for menu items.
+// This is used by the theme system to calculate horizontal spacing and positioning
+// of menu item content. The value is half of RIK_MENU_ITEM_PADDING to provide
+// equal padding on both sides of the menu item.
 - (CGFloat) menuItemRightBorderOffset
 {
   return RIK_MENU_ITEM_PADDING / 2.0;
