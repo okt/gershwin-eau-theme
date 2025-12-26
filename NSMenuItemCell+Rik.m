@@ -4,73 +4,101 @@
 #import "NSMenuItemCell+Rik.h"
 #import <objc/runtime.h>
 
-// Store original method implementations
-static IMP originalTitleWidthIMP = NULL;
-static IMP originalTitleRectForBoundsIMP = NULL;
+// Category on NSMenuItemCell used for method swizzling
+@interface NSMenuItemCell (RikSwizzling)
+- (CGFloat)rik_titleWidth;
+- (NSRect)rik_titleRectForBounds:(NSRect)cellFrame;
+@end
 
-// Our replacement titleWidth method - adds padding
-static CGFloat swizzled_titleWidth(id self, SEL _cmd) {
-  // Call original implementation
-  CGFloat originalWidth = ((CGFloat (*)(id, SEL))originalTitleWidthIMP)(self, _cmd);
-  
-  // Add padding from Rik.h constant
+@implementation NSMenuItemCell (RikSwizzling)
+
+// Swizzled implementation for titleWidth - adds padding
+- (CGFloat)rik_titleWidth {
+  RIKLOG(@"NSMenuItemCell+Rik: rik_titleWidth called");
+
+  // After swizzling, this message sends the original titleWidth implementation
+  CGFloat originalWidth = [self rik_titleWidth];
   CGFloat paddedWidth = originalWidth + RIK_MENU_ITEM_PADDING;
-  
+
+  RIKLOG(@"NSMenuItemCell+Rik: rik_titleWidth originalWidth=%f paddedWidth=%f", originalWidth, paddedWidth);
+
   return paddedWidth;
 }
 
-// Our replacement titleRectForBounds: method - shifts title right to center in padded space
-static NSRect swizzled_titleRectForBounds(id self, SEL _cmd, NSRect cellFrame) {
-  // Call original implementation
-  NSRect originalRect = ((NSRect (*)(id, SEL, NSRect))originalTitleRectForBoundsIMP)(self, _cmd, cellFrame);
-  
-  NSMenuItemCell *cell = (NSMenuItemCell *)self;
-  NSMenuView *menuView = [cell menuView];
-  
-  if (menuView) {
-    if ([menuView isHorizontal]) {
-      // Horizontal menu bar items - shift by half padding to center
-      originalRect.origin.x += (RIK_MENU_ITEM_PADDING / 2.0);
-    } else {
-      // Vertical dropdown items - shift by half padding to center
-      originalRect.origin.x += (RIK_MENU_ITEM_PADDING / 2.0);
-    }
-  }
-  
+// Swizzled implementation for titleRectForBounds: - shifts title to center in padded space
+- (NSRect)rik_titleRectForBounds:(NSRect)cellFrame {
+  RIKLOG(@"NSMenuItemCell+Rik: rik_titleRectForBounds: called with cellFrame=(%f, %f, %f, %f)",
+        cellFrame.origin.x, cellFrame.origin.y, cellFrame.size.width, cellFrame.size.height);
+
+  // After swizzling, this message sends the original titleRectForBounds: implementation
+  NSRect originalRect = [self rik_titleRectForBounds:cellFrame];
+
+  // Shift by half padding to horizontally center in padded space
+  originalRect.origin.x += (RIK_MENU_ITEM_PADDING / 2.0);
+
+  RIKLOG(@"NSMenuItemCell+Rik: rik_titleRectForBounds: returning rect=(%f, %f, %f, %f)",
+        originalRect.origin.x, originalRect.origin.y, originalRect.size.width, originalRect.size.height);
+
   return originalRect;
 }
+
+@end
 
 // This function runs when the bundle is loaded
 __attribute__((constructor))
 static void initMenuItemCellSwizzling(void) {
   NSLog(@"NSMenuItemCell+Rik: Constructor called - setting up swizzling");
-  
+
   Class menuItemCellClass = objc_getClass("NSMenuItemCell");
   if (!menuItemCellClass) {
     NSLog(@"NSMenuItemCell+Rik: ERROR - NSMenuItemCell class not found");
     return;
   }
-  
+
   // Swizzle titleWidth - this is what NSMenuView uses to calculate item widths
   SEL titleWidthSelector = sel_registerName("titleWidth");
-  Method titleWidthMethod = class_getInstanceMethod(menuItemCellClass, titleWidthSelector);
-  if (titleWidthMethod) {
-    originalTitleWidthIMP = method_getImplementation(titleWidthMethod);
-    method_setImplementation(titleWidthMethod, (IMP)swizzled_titleWidth);
-    NSLog(@"NSMenuItemCell+Rik: Successfully swizzled titleWidth method");
+  Method originalTitleWidthMethod = class_getInstanceMethod(menuItemCellClass, titleWidthSelector);
+  Method swizzledTitleWidthMethod = class_getInstanceMethod(menuItemCellClass, @selector(rik_titleWidth));
+  if (originalTitleWidthMethod && swizzledTitleWidthMethod) {
+    // Avoid double-swizzling
+    IMP originalIMP = method_getImplementation(originalTitleWidthMethod);
+    IMP swizzledIMP = method_getImplementation(swizzledTitleWidthMethod);
+    if (originalIMP != swizzledIMP) {
+      method_exchangeImplementations(originalTitleWidthMethod, swizzledTitleWidthMethod);
+      NSLog(@"NSMenuItemCell+Rik: Successfully swizzled titleWidth method");
+    } else {
+      NSLog(@"NSMenuItemCell+Rik: titleWidth already swizzled, skipping");
+    }
   } else {
-    NSLog(@"NSMenuItemCell+Rik: ERROR - Could not find titleWidth method");
+    if (!originalTitleWidthMethod) {
+      NSLog(@"NSMenuItemCell+Rik: ERROR - Could not find original titleWidth method");
+    }
+    if (!swizzledTitleWidthMethod) {
+      NSLog(@"NSMenuItemCell+Rik: ERROR - Could not find rik_titleWidth method on NSMenuItemCell");
+    }
   }
-  
+
   // Swizzle titleRectForBounds: - this positions the title text
   SEL titleRectSelector = sel_registerName("titleRectForBounds:");
-  Method titleRectMethod = class_getInstanceMethod(menuItemCellClass, titleRectSelector);
-  if (titleRectMethod) {
-    originalTitleRectForBoundsIMP = method_getImplementation(titleRectMethod);
-    method_setImplementation(titleRectMethod, (IMP)swizzled_titleRectForBounds);
-    NSLog(@"NSMenuItemCell+Rik: Successfully swizzled titleRectForBounds: method");
+  Method originalTitleRectMethod = class_getInstanceMethod(menuItemCellClass, titleRectSelector);
+  Method swizzledTitleRectMethod = class_getInstanceMethod(menuItemCellClass, @selector(rik_titleRectForBounds:));
+  if (originalTitleRectMethod && swizzledTitleRectMethod) {
+    // Avoid double-swizzling
+    IMP originalIMP = method_getImplementation(originalTitleRectMethod);
+    IMP swizzledIMP = method_getImplementation(swizzledTitleRectMethod);
+    if (originalIMP != swizzledIMP) {
+      method_exchangeImplementations(originalTitleRectMethod, swizzledTitleRectMethod);
+      NSLog(@"NSMenuItemCell+Rik: Successfully swizzled titleRectForBounds: method");
+    } else {
+      NSLog(@"NSMenuItemCell+Rik: titleRectForBounds: already swizzled, skipping");
+    }
   } else {
-    NSLog(@"NSMenuItemCell+Rik: ERROR - Could not find titleRectForBounds: method");
+    if (!originalTitleRectMethod) {
+      NSLog(@"NSMenuItemCell+Rik: ERROR - Could not find original titleRectForBounds: method");
+    }
+    if (!swizzledTitleRectMethod) {
+      NSLog(@"NSMenuItemCell+Rik: ERROR - Could not find rik_titleRectForBounds: method on NSMenuItemCell");
+    }
   }
 }
 
@@ -83,26 +111,9 @@ static void initMenuItemCellSwizzling(void) {
   [xself RIKdrawKeyEquivalentWithFrame:cellFrame inView:controlView];
 }
 
-// Override drawingRectForBounds to add padding
-- (NSRect) _overrideNSMenuItemCellMethod_drawingRectForBounds: (NSRect)theRect {
-  RIKLOG(@"_overrideNSMenuItemCellMethod_drawingRectForBounds:");
-  NSMenuItemCell *xself = (NSMenuItemCell*)self;
-  return [xself RIKdrawingRectForBounds:theRect];
-}
 @end
 
 @implementation NSMenuItemCell (RikTheme)
-
-- (CGFloat) RIKpreferredWidth
-{
-  RIKLOG(@"NSMenuItemCell+Rik: RIKpreferredWidth called");
-  
-  // Fallback to cellSize
-  NSSize cellSize = [super cellSize];
-  RIKLOG(@"NSMenuItemCell+Rik: RIKpreferredWidth - cellSize width: %.1f, padded: %.1f", 
-         cellSize.width, cellSize.width + RIK_MENU_ITEM_PADDING);
-  return cellSize.width + RIK_MENU_ITEM_PADDING;
-}
 
 - (void) RIKdrawKeyEquivalentWithFrame: (NSRect)cellFrame inView: (NSView*)controlView
 {
@@ -251,15 +262,6 @@ static void initMenuItemCellSwizzling(void) {
   
   RIKLOG(@"NSMenuItemCell+Rik: No conversion needed for '%@'", keyEquivalent);
   return keyEquivalent;
-}
-
-- (NSRect) RIKdrawingRectForBounds: (NSRect)theRect
-{
-  RIKLOG(@"NSMenuItemCell+Rik: RIKdrawingRectForBounds - original rect: {{%.1f, %.1f}, {%.1f, %.1f}}", 
-         theRect.origin.x, theRect.origin.y, theRect.size.width, theRect.size.height);
-  
-  // No inset - just return the original rect
-  return theRect;
 }
 
 @end
