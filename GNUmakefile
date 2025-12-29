@@ -1,47 +1,47 @@
 include $(GNUSTEP_MAKEFILES)/common.make
 
-PACKAGE_NAME = Rick
-BUNDLE_NAME = Rik
+PACKAGE_NAME = Eau
+BUNDLE_NAME = Eau
 BUNDLE_EXTENSION = .theme
 VERSION = 1
 
-Rik_INSTALL_DIR=$(GNUSTEP_LIBRARY)/Themes
-Rik_PRINCIPAL_CLASS = Rik
+Eau_INSTALL_DIR=$(GNUSTEP_LIBRARY)/Themes
+Eau_PRINCIPAL_CLASS = Eau
 
-Rik_OBJC_FILES = \
-		Rik.m\
-		Rik+Drawings.m\
-		Rik+Button.m\
-		Rik+FocusFrame.m\
-		Rik+WindowDecoration.m\
-		Rik+Menu.m\
-		Rik+Slider.m\
-		Rik+ProgressIndicator.m\
-		Rik+Scroller.m\
-		Rik+ColorWell.m\
-		Rik+Stepper.m\
-		Rik+Segmented.m\
-		Rik+Browser.m\
-		Rik+Table.m\
-		GSStandardDecorationView+Rik.m\
-		GSInfoPanel+Rik.m\
-		NSWindow+Rik.m\
-		NSSegmentedCell+Rik.m\
-		RikWindowButton.m\
-		RikWindowButtonCell.m\
-		RikScrollerKnobCell.m\
-		RikScrollerKnobSlotCell.m\
-		RikScrollerArrowCell.m\
-		NSAlert+Rik.m\
-		NSBrowserCell+Rik.m\
-		NSSearchFieldCell+Rik.m\
-		NSCell+Rik.m\
-		NSButtonCell+Rik.m\
-		NSTextFieldCell+Rik.m\
-		NSMenuItemCell+Rik.m\
-		NSMenuView+Rik.m\
-		NSBox+Rik.m\
-		NSPopUpButton+Rik.m
+Eau_OBJC_FILES = \
+		Eau.m\
+		Eau+Drawings.m\
+		Eau+Button.m\
+		Eau+FocusFrame.m\
+		Eau+WindowDecoration.m\
+		Eau+Menu.m\
+		Eau+Slider.m\
+		Eau+ProgressIndicator.m\
+		Eau+Scroller.m\
+		Eau+ColorWell.m\
+		Eau+Stepper.m\
+		Eau+Segmented.m\
+		Eau+Browser.m\
+		Eau+Table.m\
+		GSStandardDecorationView+Eau.m\
+		GSInfoPanel+Eau.m\
+		NSWindow+Eau.m\
+		NSSegmentedCell+Eau.m\
+		EauWindowButton.m\
+		EauWindowButtonCell.m\
+		EauScrollerKnobCell.m\
+		EauScrollerKnobSlotCell.m\
+		EauScrollerArrowCell.m\
+		NSAlert+Eau.m\
+		NSBrowserCell+Eau.m\
+		NSSearchFieldCell+Eau.m\
+		NSCell+Eau.m\
+		NSButtonCell+Eau.m\
+		NSTextFieldCell+Eau.m\
+		NSMenuItemCell+Eau.m\
+		NSMenuView+Eau.m\
+		NSBox+Eau.m\
+		NSPopUpButton+Eau.m
 ADDITIONAL_TOOL_LIBS =
 $(BUNDLE_NAME)_RESOURCE_FILES = \
 	./Resources/ThemeIcon.png\

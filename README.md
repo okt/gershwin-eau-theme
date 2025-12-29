@@ -1,7 +1,7 @@
-rik.theme - December 2024 Update
+eau.theme - December 2024 Update
 ================================
 
-A winter project to update Rik.theme to work with modern ObjC and clang-18.
+A winter project to update Eau.theme to work with modern ObjC and clang-18.
 
 ## Two Main Problems
 
@@ -13,7 +13,7 @@ A winter project to update Rik.theme to work with modern ObjC and clang-18.
 Much of the code used a pattern that looked like the following to override a method in an `NSWidget`.
 
 ``` objc
-@implementation NSWidget (RikTheme)
+@implementation NSWidget (EauTheme)
 - (void) method:(type)foo { ... }
 @end
 ```
@@ -26,20 +26,20 @@ The above code then becomes this.
 
 ``` objc
 // a forward declaration of the category, now with methods renamed
-@interface NSWidget (RikTheme)
-- (void) RIKmethod:(type)foo;
+@interface NSWidget (EauTheme)
+- (void) EAUmethod:(type)foo;
 @end
 
-// put an override in the Rik class so that GSTheme finds it
-@implementation Rik(NSWidget)
+// put an override in the Eau class so that GSTheme finds it
+@implementation Eau(NSWidget)
 - (void) _overrideNSWidgetMethod_method:(type)foo {
   (NSWidget*) xself = (NSWidget*)self; // cast self
-  [xself RIKmethod:foo];
+  [xself EAUmethod:foo];
 }
 @end
 
-@implementation NSWidget (RikTheme)
-- (void) RIKmethod:(type)foo { ... }
+@implementation NSWidget (EauTheme)
+- (void) EAUmethod:(type)foo { ... }
 @end
 ```
 
@@ -67,7 +67,7 @@ buf[(ptr - name) - 9] = '\0';
 
 ![TestDrawing screenshot](./TestDrawing-screenshot.png)
 
-rik.theme
+eau.theme
 =========
 
 a gnustep theme based on osx maverick.
@@ -89,4 +89,4 @@ Soon, more infos. Enjoy!
 A pre-release screenshot.
 
 
-![screenshot](https://github.com/BertrandDekoninck/rik.theme/blob/master/newscreen.png)
+![screenshot](https://github.com/BertrandDekoninck/eau.theme/blob/master/newscreen.png)
