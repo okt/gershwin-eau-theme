@@ -32,6 +32,7 @@ Rik_OBJC_FILES = \
 		RikScrollerKnobCell.m\
 		RikScrollerKnobSlotCell.m\
 		RikScrollerArrowCell.m\
+		NSAlert+Rik.m\
 		NSBrowserCell+Rik.m\
 		NSSearchFieldCell+Rik.m\
 		NSCell+Rik.m\
