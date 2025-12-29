@@ -113,10 +113,12 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
     // Buttons
     defButton = [self _makeButtonWithRect: NSZeroRect tag: NSAlertDefaultReturn];
     [defButton setKeyEquivalent: @"\r"];
+    NSLog(@"Rik: defButton key equivalent set to: '%@' - FORCED LOG", [defButton keyEquivalent]);
     [defButton setHighlightsBy: NSPushInCellMask | NSChangeGrayCellMask | NSContentsCellMask];
     [defButton setImagePosition: NSImageRight];
     [defButton setImage: [NSImage imageNamed: @"common_ret"]];
     [defButton setAlternateImage: [NSImage imageNamed: @"common_retH"]];
+    [defButton setFont: titleFont];  // Mark as default with bold font
     
     altButton = [self _makeButtonWithRect: NSZeroRect tag: NSAlertAlternateReturn];
     othButton = [self _makeButtonWithRect: NSZeroRect tag: NSAlertOtherReturn];
@@ -132,6 +134,7 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
 
 - (id) init
 {
+    NSLog(@"Rik: RikAlertPanel init called - FORCED LOG");
     return [self initWithContentRect: NSMakeRect(0, 0, WinMinWidth, WinMinHeight)];
 }
 
@@ -187,6 +190,7 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
     [button setAction: @selector(buttonAction:)];
     [button setTag: tag];
     [button setFont: [NSFont systemFontOfSize: 0]];
+    RIKLOG(@"Rik: Created button with tag %ld, target: %@, action: %@", tag, [button target], NSStringFromSelector([button action]));
     return button;
 }
 
@@ -418,12 +422,14 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
 
 - (void) buttonAction: (id)sender
 {
+    RIKLOG(@"Rik: buttonAction called, sender: %@, tag: %ld", sender, [sender tag]);
     if (![self isActivePanel])
     {
         NSLog(@"RikAlertPanel buttonAction: when not in modal loop");
         return;
     }
     result = [sender tag];
+    RIKLOG(@"Rik: buttonAction stopping modal with result: %ld", result);
     [NSApp stopModalWithCode: result];
 }
 
@@ -439,11 +445,141 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
 
 - (NSInteger) runModal
 {
+    NSLog(@"Rik: runModal called - FORCED LOG");
     if (isGreen)
         [self sizePanelToFit];
-    [NSApp runModalForWindow: self];
+    
+    // Ensure we're the key window and can handle events
+    [self center];
+    [self makeKeyAndOrderFront: self];
+    RIKLOG(@"Rik: runModal - window is key: %d", [self isKeyWindow]);
+    RIKLOG(@"Rik: runModal - first responder: %@", [self firstResponder]);
+    NSLog(@"Rik: About to call runModalForWindow - FORCED LOG");
+    
+    result = [NSApp runModalForWindow: self];
+    NSLog(@"Rik: runModalForWindow returned with result: %ld - FORCED LOG", result);
     [self orderOut: self];
     return result;
+}
+
+- (void) keyDown: (NSEvent *)event
+{
+    NSString *chars = [event characters];
+    RIKLOG(@"Rik: keyDown received: '%@'", chars);
+    unichar keyChar = [chars characterAtIndex: 0];
+    
+    // Handle Enter/Return for default button
+    if (keyChar == '\r' && useControl(defButton))
+    {
+        RIKLOG(@"Rik: keyDown Enter pressed, clicking default button");
+        [defButton performClick: self];
+        return;
+    }
+    
+    // Handle Escape for Cancel button
+    if (keyChar == 0x1B && useControl(altButton) && [[altButton title] isEqualToString: @"Cancel"])
+    {
+        [altButton performClick: self];
+        return;
+    }
+    
+    // Handle Tab to cycle through buttons
+    if (keyChar == '\t')
+    {
+        NSView *current = (NSView *)[self firstResponder];
+        NSView *next = [current nextKeyView];
+        if (next != nil)
+        {
+            [self makeFirstResponder: next];
+        }
+        else if (useControl(defButton))
+        {
+            [self makeFirstResponder: defButton];
+        }
+        return;
+    }
+    
+    // Handle Shift-Tab to cycle backwards
+    if (([event modifierFlags] & NSShiftKeyMask) && keyChar == '\t')
+    {
+        NSView *current = (NSView *)[self firstResponder];
+        NSView *prev = [current previousKeyView];
+        if (prev != nil)
+        {
+            [self makeFirstResponder: prev];
+        }
+        else if (useControl(othButton))
+        {
+            [self makeFirstResponder: othButton];
+        }
+        else if (useControl(altButton))
+        {
+            [self makeFirstResponder: altButton];
+        }
+        else if (useControl(defButton))
+        {
+            [self makeFirstResponder: defButton];
+        }
+        return;
+    }
+    
+    [super keyDown: event];
+}
+
+- (BOOL) performKeyEquivalent: (NSEvent *)event
+{
+    NSString *chars = [event characters];
+    RIKLOG(@"Rik: performKeyEquivalent received: '%@'", chars);
+    if ([chars isEqualToString: @"\r"] && useControl(defButton))
+    {
+        RIKLOG(@"Rik: performKeyEquivalent Enter pressed, clicking default button");
+        [defButton performClick: self];
+        return YES;
+    }
+    if ([chars isEqualToString: @"\e"] && useControl(altButton) && [[altButton title] isEqualToString: @"Cancel"])
+    {
+        RIKLOG(@"Rik: performKeyEquivalent Escape pressed, clicking cancel button");
+        [altButton performClick: self];
+        return YES;
+    }
+    return [super performKeyEquivalent: event];
+}
+
+- (void) sendEvent: (NSEvent *)event
+{
+    if ([event type] == NSKeyDown)
+    {
+        NSString *chars = [event characters];
+        RIKLOG(@"Rik: sendEvent received keyDown: '%@'", chars);
+        if ([chars length] > 0)
+        {
+            unichar keyChar = [chars characterAtIndex: 0];
+            RIKLOG(@"Rik: keyChar = %d (0x%X)", keyChar, keyChar);
+            if (keyChar == '\r' && useControl(defButton))
+            {
+                RIKLOG(@"Rik: Enter pressed, clicking default button");
+                [defButton performClick: self];
+                return;
+            }
+            if (keyChar == 0x1B && useControl(altButton) && [[altButton title] isEqualToString: @"Cancel"])
+            {
+                RIKLOG(@"Rik: Escape pressed, clicking cancel button");
+                [altButton performClick: self];
+                return;
+            }
+        }
+    }
+    [super sendEvent: event];
+}
+
+- (BOOL) canBecomeKeyWindow
+{
+    return YES;
+}
+
+- (BOOL) canBecomeMainWindow
+{
+    return YES;
 }
 
 - (void) setTitleBar: (NSString *)titleBar
@@ -555,6 +691,7 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
 
 - (void) setButtons: (NSArray *)buttons
 {
+    NSLog(@"Rik: setButtons called with %lu buttons - FORCED LOG", [buttons count]);
     NSView *content = [self contentView];
     NSUInteger count = [buttons count];
     
@@ -630,11 +767,13 @@ static void setButton(NSView *content, NSButton *control, NSButton *templateBtn)
 {
     if (templateBtn != nil)
     {
+        NSLog(@"Rik: setButton - template title: '%@', keyEquiv: '%@' - FORCED LOG", [templateBtn title], [templateBtn keyEquivalent]);
         [control setTitle: [templateBtn title]];
         [control setKeyEquivalent: [templateBtn keyEquivalent]];
         [control setKeyEquivalentModifierMask: [templateBtn keyEquivalentModifierMask]];
         [control setTag: [templateBtn tag]];
         [control sizeToFit];
+        NSLog(@"Rik: setButton - control after setup: title='%@', keyEquiv='%@', tag=%ld - FORCED LOG", [control title], [control keyEquivalent], [control tag]);
         if (!useControl(control))
             [content addSubview: control];
     }
@@ -680,14 +819,20 @@ static void setKeyEquivalent(NSButton *button)
     didSwizzle = YES;
     
     RIKLOG(@"Rik: Installing NSAlert customizations");
+    NSLog(@"Rik: Installing NSAlert customizations - FORCED LOG");
     
     // Swizzle NSAlert's _setupPanel to use RikAlertPanel
     Class alertClass = NSClassFromString(@"NSAlert");
     SEL origSetupSel = @selector(_setupPanel);
     SEL swizzledSetupSel = @selector(rik_setupPanel);
     
+    NSLog(@"Rik: Found NSAlert class: %@", alertClass);
+    
     Method origSetupMethod = class_getInstanceMethod(alertClass, origSetupSel);
     Method swizzledSetupMethod = class_getInstanceMethod(alertClass, swizzledSetupSel);
+    
+    NSLog(@"Rik: Original _setupPanel method: %p", origSetupMethod);
+    NSLog(@"Rik: Swizzled rik_setupPanel method: %p", swizzledSetupMethod);
     
     if (origSetupMethod && swizzledSetupMethod)
     {
@@ -707,10 +852,12 @@ static void setKeyEquivalent(NSButton *button)
             method_exchangeImplementations(origSetupMethod, swizzledSetupMethod);
         }
         RIKLOG(@"Rik: NSAlert _setupPanel swizzled successfully");
+        NSLog(@"Rik: NSAlert _setupPanel swizzled successfully - FORCED LOG");
     }
     else
     {
         RIKLOG(@"Rik: Warning - could not find _setupPanel method to swizzle");
+        NSLog(@"Rik: Warning - could not find _setupPanel method to swizzle - FORCED LOG");
     }
     
     // Also swizzle GSAlertPanel's _initWithoutGModel to handle legacy alert functions
@@ -745,10 +892,15 @@ static void setKeyEquivalent(NSButton *button)
 // Replacement for NSAlert's _setupPanel method
 - (void) rik_setupPanel
 {
+    NSLog(@"Rik: rik_setupPanel called - FORCED LOG");
+    RIKLOG(@"Rik: rik_setupPanel called");
+    
     RikAlertPanel *panel;
     NSString *title;
     
+    NSLog(@"Rik: Creating RikAlertPanel - FORCED LOG");
     panel = [[RikAlertPanel alloc] init];
+    NSLog(@"Rik: RikAlertPanel created: %@ - FORCED LOG", panel);
     
     // Access NSAlert's ivars through KVC or accessor methods
     NSAlertStyle style = [self alertStyle];

@@ -47,7 +47,6 @@
 - (BOOL) isActivePanel;
 
 // Internal method for GSAlertPanel swizzling (dynamically called)
-- (id) rik_initWithoutGModel;
 - (id) rik_initWithoutGModelHelper;
 
 @end
