@@ -43,7 +43,7 @@
 }
 - (CGFloat) menuSeparatorHeight
 {
-  return 1;
+  return 1.0;
 }
 
 - (BOOL) menuShouldShowIcon
@@ -195,5 +195,21 @@
 
 }
 
-
+- (void) drawSeparatorItemForMenuItemCell: (NSMenuItemCell *)cell
+                                withFrame: (NSRect)cellFrame
+                                   inView: (NSView *)controlView
+                             isHorizontal: (BOOL)isHorizontal
+{
+  // Draw a thin 1px separator line in mid gray
+  NSColor *separatorColor = [NSColor colorWithCalibratedRed: 0.5 green: 0.5 blue: 0.5 alpha: 1.0];
+  [separatorColor set];
+  
+  // Draw a single pixel line in the middle of the cell frame
+  CGFloat y = cellFrame.origin.y + cellFrame.size.height / 2.0;
+  NSBezierPath *path = [NSBezierPath bezierPath];
+  [path setLineWidth: 1.0];
+  [path moveToPoint: NSMakePoint(cellFrame.origin.x + [self menuSeparatorInset], y)];
+  [path lineToPoint: NSMakePoint(cellFrame.origin.x + cellFrame.size.width - [self menuSeparatorInset], y)];
+  [path stroke];
+}
 @end

@@ -184,6 +184,10 @@ static void initMenuItemCellSwizzling(void) {
         if ([self isHighlighted]) {
           textColor = [NSColor selectedMenuItemTextColor];
         }
+        // If this menu item is disabled, use disabled text color (greyed out)
+        else if (![self isEnabled]) {
+          textColor = [NSColor disabledControlTextColor];
+        }
         
         NSDictionary *attributes = @{
           NSFontAttributeName: font,
