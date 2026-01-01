@@ -43,6 +43,9 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
 @interface EauAlertPanel (Swizzles)
 - (id)eau_initWithoutGModel;
 - (id)eau_initWithoutGModelHelper;
+- (NSInteger)eau_runModal;
+- (NSInteger)eau_runModalHelper;
+- (NSButton *)eau_getDefButton;
 @end
 
 #pragma mark - EauAlertPanel Implementation
@@ -172,6 +175,46 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
     [subviews release];
     
     return self;
+}
+
+// Helper method to get the default button from GSAlertPanel
+// GSAlertPanel has an ivar 'defButton' that we need to access
+- (NSButton *) eau_getDefButton
+{
+    // Try to access the defButton ivar
+    Ivar defButtonIvar = class_getInstanceVariable([self class], "defButton");
+    if (defButtonIvar)
+    {
+        return object_getIvar(self, defButtonIvar);
+    }
+    return nil;
+}
+
+// Helper method that will be injected into GSAlertPanel's runModal
+// This ensures focus and pulsing work for legacy alert panels
+- (NSInteger) eau_runModalHelper
+{
+    EAULOG(@"Eau: eau_runModalHelper called for GSAlertPanel");
+    
+    // Get the default button from the ivar
+    NSButton *defBtn = [self eau_getDefButton];
+    
+    // Raise the window to ensure it gets input focus
+    [NSApp activateIgnoringOtherApps: YES];
+    [(NSPanel *)self orderFrontRegardless];
+    [(NSPanel *)self makeKeyAndOrderFront: self];
+    
+    // Ensure the default button has focus and pulsing
+    if (defBtn && [[defBtn superview] superview] != nil)
+    {
+        [(NSPanel *)self makeFirstResponder: defBtn];
+        // Set default button cell to enable pulsing animation
+        [(NSPanel *)self setDefaultButtonCell: [defBtn cell]];
+        EAULOG(@"Eau: GSAlertPanel set default button focus and pulsing for button: %@", defBtn);
+    }
+    
+    // Call the original runModal implementation
+    return [self eau_runModal];
 }
 
 - (void) dealloc
@@ -444,6 +487,11 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
     return result;
 }
 
+- (NSButton *) defaultButton
+{
+    return defButton;
+}
+
 - (BOOL) isActivePanel
 {
     return [NSApp modalWindow] == self;
@@ -451,19 +499,31 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
 
 - (NSInteger) runModal
 {
-    // NSLog(@"Eau: runModal called - FORCED LOG");
+    NSLog(@"Eau: EauAlertPanel runModal called");
     if (isGreen)
         [self sizePanelToFit];
     
     // Ensure we're the key window and can handle events
     [self center];
+    
+    // Raise the window to ensure it gets input focus
+    [NSApp activateIgnoringOtherApps: YES];
+    [self orderFrontRegardless];
     [self makeKeyAndOrderFront: self];
-    EAULOG(@"Eau: runModal - window is key: %d", [self isKeyWindow]);
-    EAULOG(@"Eau: runModal - first responder: %@", [self firstResponder]);
-    // NSLog(@"Eau: About to call runModalForWindow - FORCED LOG");
+    
+    // Make sure the default button has focus for Enter key handling
+    if (useControl(defButton))
+    {
+        [self makeFirstResponder: defButton];
+        NSLog(@"Eau: Made defButton first responder");
+    }
+    
+    NSLog(@"Eau: runModal - window is key: %d", [self isKeyWindow]);
+    NSLog(@"Eau: runModal - first responder: %@", [self firstResponder]);
+    NSLog(@"Eau: runModal - defButton: %@", defButton);
     
     result = [NSApp runModalForWindow: self];
-    // NSLog(@"Eau: runModalForWindow returned with result: %ld - FORCED LOG", result);
+    NSLog(@"Eau: runModalForWindow returned with result: %ld", result);
     [self orderOut: self];
     return result;
 }
@@ -535,16 +595,16 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
 - (BOOL) performKeyEquivalent: (NSEvent *)event
 {
     NSString *chars = [event characters];
-    EAULOG(@"Eau: performKeyEquivalent received: '%@'", chars);
+    NSLog(@"Eau: performKeyEquivalent received: '%@' (keyCode: %d)", chars, [event keyCode]);
     if ([chars isEqualToString: @"\r"] && useControl(defButton))
     {
-        EAULOG(@"Eau: performKeyEquivalent Enter pressed, clicking default button");
+        NSLog(@"Eau: performKeyEquivalent Enter pressed, clicking default button");
         [defButton performClick: self];
         return YES;
     }
     if ([chars isEqualToString: @"\e"] && useControl(altButton) && [[altButton title] isEqualToString: @"Cancel"])
     {
-        EAULOG(@"Eau: performKeyEquivalent Escape pressed, clicking cancel button");
+        NSLog(@"Eau: performKeyEquivalent Escape pressed, clicking cancel button");
         [altButton performClick: self];
         return YES;
     }
@@ -556,20 +616,20 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
     if ([event type] == NSKeyDown)
     {
         NSString *chars = [event characters];
-        EAULOG(@"Eau: sendEvent received keyDown: '%@'", chars);
+        NSLog(@"Eau: sendEvent received keyDown: '%@'", chars);
         if ([chars length] > 0)
         {
             unichar keyChar = [chars characterAtIndex: 0];
-            EAULOG(@"Eau: keyChar = %d (0x%X)", keyChar, keyChar);
+            NSLog(@"Eau: keyChar = %d (0x%X)", keyChar, keyChar);
             if (keyChar == '\r' && useControl(defButton))
             {
-                EAULOG(@"Eau: Enter pressed, clicking default button");
+                NSLog(@"Eau: Enter pressed, clicking default button");
                 [defButton performClick: self];
                 return;
             }
             if (keyChar == 0x1B && useControl(altButton) && [[altButton title] isEqualToString: @"Cancel"])
             {
-                EAULOG(@"Eau: Escape pressed, clicking cancel button");
+                NSLog(@"Eau: Escape pressed, clicking cancel button");
                 [altButton performClick: self];
                 return;
             }
@@ -635,7 +695,11 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
     setControl(content, othButton, otherButton);
     
     if (useControl(defButton))
+    {
         [self makeFirstResponder: defButton];
+        // Set the default button cell to enable blue pulsing animation
+        [self setDefaultButtonCell: [defButton cell]];
+    }
     else
         [self makeFirstResponder: self];
     
@@ -706,7 +770,11 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
     setButton(content, othButton, count > 2 ? [buttons objectAtIndex: 2] : nil);
     
     if (useControl(defButton))
+    {
         [self makeFirstResponder: defButton];
+        // Set the default button cell to enable blue pulsing animation
+        [self setDefaultButtonCell: [defButton cell]];
+    }
     else
         [self makeFirstResponder: self];
     
@@ -773,13 +841,13 @@ static void setButton(NSView *content, NSButton *control, NSButton *templateBtn)
 {
     if (templateBtn != nil)
     {
-        // NSLog(@"Eau: setButton - template title: '%@', keyEquiv: '%@' - FORCED LOG", [templateBtn title], [templateBtn keyEquivalent]);
+        NSLog(@"Eau: setButton - template title: '%@', keyEquiv: '%@', tag: %ld", [templateBtn title], [templateBtn keyEquivalent], [templateBtn tag]);
         [control setTitle: [templateBtn title]];
         [control setKeyEquivalent: [templateBtn keyEquivalent]];
         [control setKeyEquivalentModifierMask: [templateBtn keyEquivalentModifierMask]];
         [control setTag: [templateBtn tag]];
         [control sizeToFit];
-        // NSLog(@"Eau: setButton - control after setup: title='%@', keyEquiv='%@', tag=%ld - FORCED LOG", [control title], [control keyEquivalent], [control tag]);
+        NSLog(@"Eau: setButton - control after setup: title='%@', keyEquiv='%@', tag=%ld", [control title], [control keyEquivalent], [control tag]);
         if (!useControl(control))
             [content addSubview: control];
     }
@@ -866,6 +934,37 @@ static void setKeyEquivalent(NSButton *button)
         // NSLog(@"Eau: Warning - could not find _setupPanel method to swizzle - FORCED LOG");
     }
     
+    // Swizzle NSAlert's runModal to ensure proper activation
+    SEL origRunModalSel = @selector(runModal);
+    SEL swizzledRunModalSel = @selector(eau_runModal);
+    
+    Method origRunModalMethod = class_getInstanceMethod(alertClass, origRunModalSel);
+    Method swizzledRunModalMethod = class_getInstanceMethod(alertClass, swizzledRunModalSel);
+    
+    if (origRunModalMethod && swizzledRunModalMethod)
+    {
+        BOOL didAddRunModal = class_addMethod(alertClass,
+                                              origRunModalSel,
+                                              method_getImplementation(swizzledRunModalMethod),
+                                              method_getTypeEncoding(swizzledRunModalMethod));
+        if (didAddRunModal)
+        {
+            class_replaceMethod(alertClass,
+                                swizzledRunModalSel,
+                                method_getImplementation(origRunModalMethod),
+                                method_getTypeEncoding(origRunModalMethod));
+        }
+        else
+        {
+            method_exchangeImplementations(origRunModalMethod, swizzledRunModalMethod);
+        }
+        EAULOG(@"Eau: NSAlert runModal swizzled successfully");
+    }
+    else
+    {
+        EAULOG(@"Eau: Warning - could not find runModal method to swizzle");
+    }
+    
     // Also swizzle GSAlertPanel's _initWithoutGModel to handle legacy alert functions
     // (NSRunAlertPanel, NSGetAlertPanel, etc.) which create GSAlertPanel directly
     Class gsAlertPanelClass = NSClassFromString(@"GSAlertPanel");
@@ -892,21 +991,150 @@ static void setKeyEquivalent(NSButton *button)
                 EAULOG(@"Eau: GSAlertPanel _initWithoutGModel swizzled successfully");
             }
         }
+        
+        // Swizzle GSAlertPanel's runModal to ensure focus and pulsing
+        SEL origRunModalSel = @selector(runModal);
+        SEL swizzledRunModalSel = @selector(eau_runModal);
+        
+        // Add the eau_getDefButton helper method to GSAlertPanel
+        Method getDefButtonMethod = class_getInstanceMethod([EauAlertPanel class], @selector(eau_getDefButton));
+        if (getDefButtonMethod)
+        {
+            class_addMethod(gsAlertPanelClass,
+                           @selector(eau_getDefButton),
+                           method_getImplementation(getDefButtonMethod),
+                           method_getTypeEncoding(getDefButtonMethod));
+        }
+        
+        // Add the swizzled runModal method to GSAlertPanel
+        Method runModalHelperMethod = class_getInstanceMethod([EauAlertPanel class], @selector(eau_runModalHelper));
+        if (runModalHelperMethod)
+        {
+            class_addMethod(gsAlertPanelClass,
+                           swizzledRunModalSel,
+                           method_getImplementation(runModalHelperMethod),
+                           method_getTypeEncoding(runModalHelperMethod));
+            
+            Method origRunModalMethod = class_getInstanceMethod(gsAlertPanelClass, origRunModalSel);
+            Method newSwizzledRunModalMethod = class_getInstanceMethod(gsAlertPanelClass, swizzledRunModalSel);
+            
+            if (origRunModalMethod && newSwizzledRunModalMethod)
+            {
+                method_exchangeImplementations(origRunModalMethod, newSwizzledRunModalMethod);
+                EAULOG(@"Eau: GSAlertPanel runModal swizzled successfully");
+            }
+        }
     }
+}
+
+// Replacement for NSAlert's runModal method
+// This ensures the window is activated and brought to front before the modal loop
+- (NSInteger) eau_runModal
+{
+    EAULOG(@"Eau: NSAlert eau_runModal called");
+    
+    // Call _setupPanel - this invokes the Eau custom setup since methods were swizzled
+    // After swizzling: _setupPanel -> eau_setupPanel code, eau_setupPanel -> original code
+    [self performSelector: @selector(_setupPanel)];
+    
+    // Get the _window ivar
+    NSWindow *window = nil;
+    @try {
+        window = [self valueForKey: @"_window"];
+    }
+    @catch (NSException *exception) {
+        Ivar windowIvar = class_getInstanceVariable([self class], "_window");
+        if (windowIvar)
+        {
+            window = object_getIvar(self, windowIvar);
+        }
+    }
+    
+    if (window)
+    {
+        // If it's an EauAlertPanel, use its runModal which handles keyboard focus
+        if ([window isKindOfClass: [EauAlertPanel class]])
+        {
+            EauAlertPanel *panel = (EauAlertPanel *)window;
+            NSInteger modalResult = [panel runModal];
+            
+            // Store result via KVC if possible
+            @try {
+                [self setValue: @(modalResult) forKey: @"_result"];
+            }
+            @catch (NSException *exception) {
+                // Ignore if ivar doesn't exist
+            }
+            
+            // Destroy the window as original does
+            @try {
+                [self setValue: nil forKey: @"_window"];
+            }
+            @catch (NSException *exception) {
+                Ivar windowIvar = class_getInstanceVariable([self class], "_window");
+                if (windowIvar)
+                {
+                    object_setIvar(self, windowIvar, nil);
+                }
+            }
+            
+            return modalResult;
+        }
+        
+        // Fallback for non-EauAlertPanel windows
+        [NSApp activateIgnoringOtherApps: YES];
+        [window center];
+        [window orderFrontRegardless];
+        [window makeKeyAndOrderFront: nil];
+        
+        EAULOG(@"Eau: NSAlert running modal for window: %@", window);
+        [NSApp runModalForWindow: window];
+        [window orderOut: self];
+        
+        // Get the result from the panel
+        NSInteger result = 0;
+        if ([window respondsToSelector: @selector(result)])
+        {
+            result = [(EauAlertPanel *)window result];
+        }
+        
+        // Store result via KVC if possible
+        @try {
+            [self setValue: @(result) forKey: @"_result"];
+        }
+        @catch (NSException *exception) {
+            // Ignore if ivar doesn't exist
+        }
+        
+        // Destroy the window as original does
+        @try {
+            [self setValue: nil forKey: @"_window"];
+        }
+        @catch (NSException *exception) {
+            Ivar windowIvar = class_getInstanceVariable([self class], "_window");
+            if (windowIvar)
+            {
+                object_setIvar(self, windowIvar, nil);
+            }
+        }
+        
+        return result;
+    }
+    
+    // Fallback: if window creation failed, return failure
+    EAULOG(@"Eau: NSAlert eau_runModal - window was nil, returning NSAlertFirstButtonReturn");
+    return NSAlertFirstButtonReturn;
 }
 
 // Replacement for NSAlert's _setupPanel method
 - (void) eau_setupPanel
 {
-    // NSLog(@"Eau: eau_setupPanel called - FORCED LOG");
     EAULOG(@"Eau: eau_setupPanel called");
     
     EauAlertPanel *panel;
     NSString *title;
     
-    // NSLog(@"Eau: Creating EauAlertPanel - FORCED LOG");
     panel = [[EauAlertPanel alloc] init];
-    // NSLog(@"Eau: EauAlertPanel created: %@ - FORCED LOG", panel);
     
     // Access NSAlert's ivars through KVC or accessor methods
     NSAlertStyle style = [self alertStyle];

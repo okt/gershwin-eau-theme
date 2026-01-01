@@ -44,9 +44,12 @@
 - (void) sizePanelToFit;
 - (void) buttonAction: (id)sender;
 - (NSInteger) result;
+- (NSButton *) defaultButton;
 - (BOOL) isActivePanel;
 
-// Internal method for GSAlertPanel swizzling (dynamically called)
+// Internal methods for GSAlertPanel swizzling (dynamically called)
 - (id) eau_initWithoutGModelHelper;
+- (NSInteger) eau_runModalHelper;
+- (NSButton *) eau_getDefButton;
 
 @end
