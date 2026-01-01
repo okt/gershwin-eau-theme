@@ -62,7 +62,7 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
     [self setBecomesKeyOnlyIfNeeded: NO];
     
     NSView *content = [self contentView];
-    NSFont *titleFont = METRICS_TITLE_FONT;
+    NSFont *titleFont = METRICS_FONT_SYSTEM_BOLD_13;
     
     // Icon button - positioned at top left
     NSRect iconRect = NSMakeRect(METRICS_ICON_LEFT, 
@@ -102,7 +102,7 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
     [messageField setDrawsBackground: NO];
     [messageField setAlignment: NSLeftTextAlignment];
     [messageField setStringValue: @""];
-    [messageField setFont: METRICS_MESSAGE_FONT];
+    [messageField setFont: METRICS_FONT_SYSTEM_REGULAR_11];
     [[messageField cell] setWraps: YES];
     [[messageField cell] setLineBreakMode: NSLineBreakByWordWrapping];
     
@@ -395,7 +395,7 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
                 rect.size.width = bsize.width;
                 rect.size.height = bsize.height;
                 [buttons[i] setFrame: rect];
-                position -= METRICS_BUTTON_INTERSPACE;
+                position -= METRICS_BUTTON_VERT_INTERSPACE;
             }
         }
     }
@@ -932,7 +932,7 @@ static NSScrollView *makeScrollViewWithRect(NSRect rect);
 
 static NSScrollView *makeScrollViewWithRect(NSRect rect)
 {
-    float lineHeight = [METRICS_MESSAGE_FONT boundingRectForFont].size.height;
+    float lineHeight = [METRICS_FONT_SYSTEM_REGULAR_11 boundingRectForFont].size.height;
     NSScrollView *scrollView = [[NSScrollView alloc] initWithFrame: rect];
     
     [scrollView setBorderType: NSLineBorder];
