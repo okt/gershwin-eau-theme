@@ -249,12 +249,32 @@ static void initMenuItemCellSwizzling(void) {
       [result appendString:@"⌘"]; // Command symbol
     }
     
-    // Convert key equivalent to uppercase if it's a letter
+    // Convert key equivalent to uppercase if it's a letter, or to symbol for special keys
     NSString *keyToAdd = keyEquivalent;
     if ([keyEquivalent length] == 1) {
       unichar ch = [keyEquivalent characterAtIndex:0];
       if (ch >= 'a' && ch <= 'z') {
         keyToAdd = [keyEquivalent uppercaseString];
+      } else if (ch == 8 || ch == 127) { // Backspace or Delete
+        keyToAdd = @"⌫";
+      } else if (ch == 27) { // Escape
+        keyToAdd = @"⎋";
+      } else if (ch == 9) { // Tab
+        keyToAdd = @"⇥";
+      } else if (ch == 13) { // Return/Enter
+        keyToAdd = @"↵";
+      }
+    } else if ([keyEquivalent length] > 1) {
+      // Handle arrow keys and other multi-character key names
+      NSString *lower = [keyEquivalent lowercaseString];
+      if ([lower isEqualToString:@"left"]) {
+        keyToAdd = @"←";
+      } else if ([lower isEqualToString:@"right"]) {
+        keyToAdd = @"→";
+      } else if ([lower isEqualToString:@"up"]) {
+        keyToAdd = @"↑";
+      } else if ([lower isEqualToString:@"down"]) {
+        keyToAdd = @"↓";
       }
     }
     
