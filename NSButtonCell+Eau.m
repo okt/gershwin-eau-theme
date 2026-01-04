@@ -238,6 +238,20 @@ static NSMutableSet *defaultButtonSetCells = nil;
       return;
     }
     
+    // Defensive: Check if this is a modal panel - if so, don't schedule delayed attempt
+    // Modal panels are often short-lived and may be deallocated before timer fires
+    NSView *controlView = nil;
+    if ([self respondsToSelector:@selector(controlView)]) {
+      controlView = [self controlView];
+    }
+    if (controlView) {
+      NSWindow *window = [controlView window];
+      if (window && [window isKindOfClass:[NSPanel class]]) {
+        EAULOG(@"NSButtonCell+Eau: Button is in a panel, skipping delayed attempt for cell %p", self);
+        return;
+      }
+    }
+    
     // Only schedule ONE delayed attempt to prevent loops
     EAULOG(@"NSButtonCell+Eau: Scheduling single delayed attempt for button cell %p", self);
     @try {
@@ -257,12 +271,36 @@ static NSMutableSet *defaultButtonSetCells = nil;
 {
   EAULOG(@"NSButtonCell+Eau: finalAttemptSetAsDefaultButton called for button cell %p", self);
   
-  @try {    // Defensive: Verify self is still a valid object
+  @try {
+    // Defensive: Verify self is still a valid object
     if (![self isKindOfClass:[NSButtonCell class]]) {
       EAULOG(@"NSButtonCell+Eau: Cell %p is no longer valid, aborting final attempt", self);
       return;
     }
-        // Check if already processed
+    
+    // Defensive: Check if the window still exists before proceeding
+    NSView *controlView = nil;
+    if ([self respondsToSelector:@selector(controlView)]) {
+      controlView = [self controlView];
+    }
+    if (!controlView || ![controlView isKindOfClass:[NSView class]]) {
+      EAULOG(@"NSButtonCell+Eau: Control view is nil or invalid in final attempt for cell %p", self);
+      return;
+    }
+    
+    NSWindow *window = [controlView window];
+    if (!window || ![window isKindOfClass:[NSWindow class]]) {
+      EAULOG(@"NSButtonCell+Eau: Window is nil or invalid in final attempt for cell %p", self);
+      return;
+    }
+    
+    // Check if window is still visible - if not, it's probably being closed
+    if (![window isVisible]) {
+      EAULOG(@"NSButtonCell+Eau: Window is not visible in final attempt for cell %p, aborting", self);
+      return;
+    }
+    
+    // Check if already processed
     @synchronized(defaultButtonSetCells) {
       NSValue *cellPtr = [NSValue valueWithPointer:self];
       if ([defaultButtonSetCells containsObject:cellPtr]) {
