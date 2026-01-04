@@ -169,10 +169,6 @@
   NSColor * c;
   [cell setBordered:NO];
 
-  if(isHorizontal)
-  {
-    cellFrame.origin.y = 1;
-  }
   if (state == GSThemeSelectedState || state == GSThemeHighlightedState)
     {
       // Draw highlight on full cell frame (including padding)

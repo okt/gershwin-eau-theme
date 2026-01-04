@@ -1,6 +1,7 @@
 #import <AppKit/AppKit.h>
 #import <Foundation/NSUserDefaults.h>
 #import <GNUstepGUI/GSTheme.h>
+#import "NSTableView+Eau.h"
 
 // To enable debugging messages in the _overrideClassMethod_foo mechanism
 #if 1

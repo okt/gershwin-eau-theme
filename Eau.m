@@ -123,9 +123,17 @@ static Class _menuRegistryClass;
         }
       
       EAULOG(@"Eau: Theme initialization completed (D-Bus %@)", menuRegistry ? @"enabled" : @"disabled");
+
+      // Ensure alternating row background color is visible in Eau theme
+      NSColorList *systemColors = [NSColorList colorListNamed: @"System"];
+      if (systemColors != nil)
+        {
+          [systemColors setColor: [NSColor colorWithCalibratedWhite: 0.96 alpha: 1.0]
+                           forKey: @"alternateRowBackgroundColor"];
+        }
     }
   return self;
-}
+}    
 
 - (void) dealloc
 {
