@@ -257,8 +257,12 @@ static NSMutableSet *defaultButtonSetCells = nil;
 {
   EAULOG(@"NSButtonCell+Eau: finalAttemptSetAsDefaultButton called for button cell %p", self);
   
-  @try {
-    // Check if already processed
+  @try {    // Defensive: Verify self is still a valid object
+    if (![self isKindOfClass:[NSButtonCell class]]) {
+      EAULOG(@"NSButtonCell+Eau: Cell %p is no longer valid, aborting final attempt", self);
+      return;
+    }
+        // Check if already processed
     @synchronized(defaultButtonSetCells) {
       NSValue *cellPtr = [NSValue valueWithPointer:self];
       if ([defaultButtonSetCells containsObject:cellPtr]) {
@@ -298,6 +302,12 @@ static NSMutableSet *defaultButtonSetCells = nil;
       EAULOG(@"NSButtonCell+Eau: Found control view %p for button cell %p", controlView, self);
     }
     
+    // Defensive: Check if controlView is still valid (not deallocated)
+    if (!controlView || ![controlView isKindOfClass:[NSView class]]) {
+      EAULOG(@"NSButtonCell+Eau: Control view is nil or invalid for button cell %p", self);
+      return NO;
+    }
+    
     NSWindow *window = nil;
     
     if (controlView) {
@@ -316,11 +326,15 @@ static NSMutableSet *defaultButtonSetCells = nil;
         while (currentView && !window) {
           @try {
             currentView = [currentView superview];
-            if (currentView) {
+            // Defensive: Check if currentView is still valid before accessing
+            if (currentView && [currentView isKindOfClass:[NSView class]]) {
               window = [currentView window];
               if (window) {
                 EAULOG(@"NSButtonCell+Eau: Found window %p through view hierarchy traversal", window);
               }
+            } else {
+              // Invalid view in hierarchy, stop traversing
+              break;
             }
           }
           @catch (NSException *hierarchyException) {
@@ -330,7 +344,8 @@ static NSMutableSet *defaultButtonSetCells = nil;
         }
       }
       
-      if (window) {
+      // Defensive: Check if window is still valid before using it
+      if (window && [window isKindOfClass:[NSWindow class]]) {
         @try {
           [self markAsDefaultButtonSet];
           EAULOG(@"NSButtonCell+Eau: Setting window %p default button cell to %p", window, self);
