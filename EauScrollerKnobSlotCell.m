@@ -11,7 +11,7 @@
 {
   if (NSIsEmptyRect(cellFrame))
     return;
-//  cellFrame = NSInsetRect(cellFrame, 1, 1);
+  // Fill entire area with gradient, no borders
   NSColor * baseColor = [NSColor colorWithCalibratedRed: 0.95
                                                   green: 0.95
                                                    blue: 0.95
@@ -28,7 +28,5 @@
   if(horizontal)
     a = 90;
   [gr drawInRect: cellFrame angle: a];
-  [shadowColor set];
-  NSFrameRect(cellFrame);
 }
 @end

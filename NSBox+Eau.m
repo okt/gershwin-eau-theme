@@ -34,6 +34,7 @@
 {
 	rect = NSIntersectionRect(_bounds, rect);
 	[self setBorderWidth: 100.0];
+	[self setTransparent: YES];
 	[[GSTheme theme] drawBoxInClipRect: rect
 			           boxType: _box_type
 			        borderType: _border_type
@@ -110,9 +111,8 @@
 	  r.size.height = _border_rect.size.height - (2 * _offsets.height)
 	    - (2 * borderSize.height);
 
-	  // center the title cell
-	  c = (_bounds.size.width - titleSize.width) / 2;
-	  if (c < 0) c = 0;
+	  // left-align the title cell
+	  c = 6.0; // left padding
 	  _title_rect.origin.x = _bounds.origin.x + c;
 	  _title_rect.origin.y = _bounds.origin.y + _border_rect.size.height
 	    + borderSize.height;
@@ -146,9 +146,8 @@
 	  // Adjust by the title size
 	  r.size.height -= titleSize.height + borderSize.height;
 
-	  // center the title cell
-	  c = (_border_rect.size.width - titleSize.width) / 2;
-	  if (c < 0) c = 0;
+	  // left-align the title cell
+	  c = 6.0; // left padding
 	  _title_rect.origin.x = _border_rect.origin.x + c;
 	  _title_rect.origin.y
 	    = _border_rect.origin.y + _border_rect.size.height
@@ -201,9 +200,8 @@
 	  // Adjust by the title size
 	  //	r.size.height -= titleSize.height + borderSize.height;
 
-	  // center the title cell
-	  c = (_border_rect.size.width - titleSize.width) / 2;
-	  if (c < 0) c = 0;
+	  // left-align the title cell
+	  c = 6.0; // left padding
 	  _title_rect.origin.x = _border_rect.origin.x + c;
 	  _title_rect.origin.y
 	    = _border_rect.origin.y + _border_rect.size.height - topMargin;
@@ -258,9 +256,8 @@
 	  r.origin.y += (titleSize.height / 2) + borderSize.height;
 	  r.size.height -= (titleSize.height / 2) + borderSize.height;
 	  */
-	  // center the title cell
-	  c = (_border_rect.size.width - titleSize.width) / 2;
-	  if (c < 0) c = 0;
+	  // left-align the title cell
+	  c = 6.0; // left padding
 	  _title_rect.origin.x = c;
 	  _title_rect.origin.y = 0;
 	  _title_rect.size = titleSize;
@@ -292,9 +289,8 @@
 	  r.size.height = _border_rect.size.height - (2 * _offsets.height)
 	    - (2 * borderSize.height);
 
-	  // center the title cell
-	  c = (_border_rect.size.width - titleSize.width) / 2;
-	  if (c < 0) c = 0;
+	  // left-align the title cell
+	  c = 6.0; // left padding
 	  _title_rect.origin.x = c;
 	  _title_rect.origin.y = 0;
 	  _title_rect.size = titleSize;
@@ -327,9 +323,8 @@
 	  r.origin.y += titleSize.height + borderSize.height;
 	  r.size.height -= titleSize.height + borderSize.height;
 
-	  // center the title cell
-	  c = (_border_rect.size.width - titleSize.width) / 2;
-	  if (c < 0) c = 0;
+	  // left-align the title cell
+	  c = 6.0; // left padding
 	  _title_rect.origin.x = _border_rect.origin.x + c;
 	  _title_rect.origin.y = _border_rect.origin.y + borderSize.height;
 	  _title_rect.size = titleSize;

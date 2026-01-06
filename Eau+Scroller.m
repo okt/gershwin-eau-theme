@@ -136,7 +136,7 @@
 
 - (BOOL) scrollViewScrollersOverlapBorders
 {
-  return NO;
+  return YES;
 }
 
 - (BOOL) scrollViewShouldAutohideScrollers

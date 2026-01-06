@@ -24,6 +24,15 @@
     {
       // Enable alternating row background colors by default in Eau theme
       [self setUsesAlternatingRowBackgroundColors: YES];
+      
+      // Set row height to match menu item height (22px) from AppearanceMetrics
+      [self setRowHeight: 22.0];
+      
+      // Disable all grid lines - we'll draw only horizontal lines via the theme
+      [self setGridStyleMask: 0];
+      
+      // Set grid color to transparent to ensure no lines show
+      [self setGridColor: [NSColor clearColor]];
     }
   
   return self;

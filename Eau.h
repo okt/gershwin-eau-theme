@@ -26,6 +26,8 @@
 - (void) drawPathButton: (NSBezierPath*) path
                      in: (NSCell*)cell
 			            state: (GSThemeControlState) state;
+- (NSColor*) buttonColorInCell:(NSCell*) cell forState: (GSThemeControlState) state;
+- (NSGradient *) _bezelGradientWithColor:(NSColor*) baseColor;
 - (BOOL) _isDBusAvailable;
 @end
 

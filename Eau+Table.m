@@ -17,6 +17,13 @@
 
   return NSInsetRect(theRect, borderSize.width, borderSize.height);
 }
+
+- (NSTextAlignment) tableHeaderCellTextAlignment
+{
+  // Make table headers left-aligned instead of centered
+  return NSLeftTextAlignment;
+}
+
 - (NSColor *) tableHeaderTextColorForState: (GSThemeControlState)state
 {
   NSColor *color;
@@ -48,6 +55,7 @@
       [buttonBackgroundGradient drawInRect: rect angle: -90];
       NSBezierPath* linesPath = [NSBezierPath bezierPath];
       [linesPath setLineWidth: 1];
+      // Removed vertical lines - only draw horizontal lines
       [linesPath moveToPoint: NSMakePoint(rect.origin.x, NSMinY(rect))];
       [linesPath lineToPoint: NSMakePoint(rect.origin.x + rect.size.width, NSMinY(rect))];
 
@@ -89,8 +97,9 @@
 
         NSBezierPath* linesPath = [NSBezierPath bezierPath];
         [linesPath setLineWidth: 1];
-        [linesPath moveToPoint: NSMakePoint(cellFrame.origin.x-0.5, NSMinY(cellFrame) + 5)];
-        [linesPath lineToPoint: NSMakePoint(cellFrame.origin.x-0.5, NSMaxY(cellFrame) - 5)];
+        // Removed vertical line - only draw horizontal lines
+        // [linesPath moveToPoint: NSMakePoint(cellFrame.origin.x-0.5, NSMinY(cellFrame) + 5)];
+        // [linesPath lineToPoint: NSMakePoint(cellFrame.origin.x-0.5, NSMaxY(cellFrame) - 5)];
 
         [linesPath moveToPoint: NSMakePoint(cellFrame.origin.x, NSMinY(cellFrame))];
         [linesPath lineToPoint: NSMakePoint(cellFrame.origin.x + cellFrame.size.width, NSMinY(cellFrame))];

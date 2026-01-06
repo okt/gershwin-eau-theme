@@ -23,6 +23,7 @@ Eau_OBJC_FILES = \
 		Eau+Segmented.m\
 		Eau+Browser.m\
 		Eau+Table.m\
+		Eau+TabView.m\
 		GSStandardDecorationView+Eau.m\
 		GSInfoPanel+Eau.m\
 		NSWindow+Eau.m\
