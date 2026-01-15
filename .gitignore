@@ -1,4 +1,5 @@
 obj/
+Eau.theme/
 .AppleDouble
 .gwdir
 *.swp
@@ -7,5 +8,3 @@ tags
 *.core
 *_test.*
 *.test
-Eau.theme/
-Eau.theme/Eau

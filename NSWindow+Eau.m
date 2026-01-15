@@ -1,5 +1,6 @@
 #include "Eau+Button.h"
 #include "EauWindowButton.h"
+#include "EauGrowBoxView.h"
 #include <AppKit/NSAnimation.h>
 #import <AppKit/NSWindow.h>
 #import <AppKit/NSImage.h>
@@ -313,6 +314,9 @@
 @interface NSWindow(EauTheme)
 - (void) EAUsetDefaultButtonCell: (NSButtonCell *)aCell;
 - (void) EAUcenter;
+- (void) EAUorderFront: (id)sender;
+- (void) EAUmakeKeyAndOrderFront: (id)sender;
+- (void) EAUdisplay;
 @end
 
 @implementation Eau(NSWindow)
@@ -382,6 +386,24 @@
   EAULOG(@"_overrideNSWindowMethod_center: Positioning window with golden ratio");
   NSWindow *xself = (NSWindow*)self;
   [xself EAUcenter];
+}
+
+// Override orderFront: to add grow box to resizable windows
+- (void) _overrideNSWindowMethod_orderFront: (id)sender {
+  NSWindow *xself = (NSWindow*)self;
+  [xself EAUorderFront:sender];
+}
+
+// Override makeKeyAndOrderFront: to add grow box
+- (void) _overrideNSWindowMethod_makeKeyAndOrderFront: (id)sender {
+  NSWindow *xself = (NSWindow*)self;
+  [xself EAUmakeKeyAndOrderFront:sender];
+}
+
+// Override display to add grow box (catches windows shown other ways)
+- (void) _overrideNSWindowMethod_display {
+  NSWindow *xself = (NSWindow*)self;
+  [xself EAUdisplay];
 }
 
 @end
@@ -465,10 +487,42 @@
   }
   
   NSRect newFrame = NSMakeRect(x, y, windowFrame.size.width, windowFrame.size.height);
-  
+
   EAULOG(@"NSWindow+Eau: New window frame with golden ratio: %@", NSStringFromRect(newFrame));
-  
+
   [self setFrame:newFrame display:YES];
+}
+
+// Add grow box to resizable windows when ordered front
+- (void) EAUorderFront: (id)sender
+{
+  // Add grow box view for resizable windows
+  [EauGrowBoxView addToWindow:self];
+
+  // Call the original orderFront: implementation
+  [self orderWindow:NSWindowAbove relativeTo:0];
+}
+
+// Add grow box when makeKeyAndOrderFront: is called
+- (void) EAUmakeKeyAndOrderFront: (id)sender
+{
+  // Add grow box view for resizable windows
+  [EauGrowBoxView addToWindow:self];
+
+  // Call primitive methods to make key and order front
+  [self makeKeyWindow];
+  [self orderWindow:NSWindowAbove relativeTo:0];
+}
+
+// Add grow box when display is called
+- (void) EAUdisplay
+{
+  // Add grow box view for resizable windows
+  [EauGrowBoxView addToWindow:self];
+
+  // Redisplay all views
+  [[self contentView] setNeedsDisplay:YES];
+  [[self contentView] displayIfNeeded];
 }
 
 @end

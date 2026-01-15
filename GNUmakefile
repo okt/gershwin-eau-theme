@@ -35,6 +35,8 @@ Eau_OBJC_FILES = \
 		EauScrollerKnobCell.m\
 		EauScrollerKnobSlotCell.m\
 		EauScrollerArrowCell.m\
+		EauGrowBoxCell.m\
+		EauGrowBoxView.m\
 		NSAlert+Eau.m\
 		NSBrowserCell+Eau.m\
 		NSSearchFieldCell+Eau.m\
