@@ -255,8 +255,7 @@ static void EAUWindowLog(NSString *event, NSWindow *window)
 {
   EAULOG(@"DefaultButtonAnimationController: initWithButtonCell called with cell %p", cell);
   if (self = [super init]) {
-    buttoncell = cell;
-    
+    buttoncell = cell;    EAULOG(@"DefaultButtonAnimationController: Initialized for button cell %p", cell);    
     // Register for additional window notifications to handle visibility changes
     [[NSNotificationCenter defaultCenter] addObserver:self 
                                              selector:@selector(windowWillClose:) 
@@ -307,11 +306,28 @@ static void EAUWindowLog(NSString *event, NSWindow *window)
   return self;
 }
 
-// Implement windowWillReturnFieldEditor:toObject: to avoid objc_msgSend_stret crash.
-// Must return nil to use default field editor.
+/* windowWillReturnFieldEditor:toObject:
+ * NSWindowDelegate method that allows customizing the field editor for text input.
+ * The field editor is a shared NSText object used for editing text in NSTextField
+ * and other text controls.
+ *
+ * CRITICAL: This method MUST be implemented to avoid a crash on ARM64 architecture.
+ * Without this implementation, the Objective-C runtime can incorrectly use
+ * objc_msgSend_stret (structure-return calling convention) instead of objc_msgSend
+ * (pointer-return calling convention), causing a SIGSEGV when the window tries to
+ * get a field editor for text input.
+ *
+ * By explicitly implementing this method and returning nil, we:
+ * 1. Prevent the objc_msgSend_stret crash
+ * 2. Tell NSWindow to use its default field editor (which is correct behavior)
+ * 3. Ensure text fields work properly with focus and keyboard input
+ *
+ * This is safe for GWDialog and other windows that use text fields.
+ */
 - (id)windowWillReturnFieldEditor:(id)fieldEditor toObject:(id)anObject
 {
-  return nil;
+  EAULOG(@"DefaultButtonAnimationController: windowWillReturnFieldEditor called for object %p, returning nil (use default)", anObject);
+  return nil;  // Return nil to use the default field editor
 }
 
 
@@ -388,12 +404,25 @@ static void EAUWindowLog(NSString *event, NSWindow *window)
 // TS: added this method
 - (void)windowDidBecomeKey:(NSNotification *)notification
 {
-      if ([self shouldAnimationBeRunning]) {
-          EAULOG(@"DefaultButtonAnimationController: Window became key and button is enabled, starting animation");
-          [animation startAnimation];
-      } else {
-          EAULOG(@"DefaultButtonAnimationController: Window became key but button is disabled, not starting animation");
-      }
+      NSWindow *window = [notification object];
+      NSWindow *buttonWindow = [[buttoncell controlView] window];
+      
+      EAULOG(@"DefaultButtonAnimationController: Window became key notification received");
+      EAULOG(@"DefaultButtonAnimationController: Notifying window %p, button window %p", window, buttonWindow);
+      
+      if (window == buttonWindow)
+        {
+          if ([self shouldAnimationBeRunning]) {
+              EAULOG(@"DefaultButtonAnimationController: Button's window became key and button is enabled, starting animation");
+              [animation startAnimation];
+          } else {
+              EAULOG(@"DefaultButtonAnimationController: Button's window became key but button is disabled, not starting animation");
+          }
+        }
+      else
+        {
+          EAULOG(@"DefaultButtonAnimationController: Different window became key, ignoring");
+        }
 }
 
 // Additional notification handlers for proper visibility management
@@ -585,6 +614,42 @@ static void EAUWindowLog(NSString *event, NSWindow *window)
 
 static const void *kEAUDefaultButtonControllerKey = &kEAUDefaultButtonControllerKey;
 
+/* EAUsetDefaultButtonCell:
+ * 
+ * Custom implementation of setDefaultButtonCell: for the Eau theme.
+ * This method is installed as a replacement for NSWindow's setDefaultButtonCell:
+ * via the _overrideNSWindowMethod_setDefaultButtonCell: block architecture.
+ * 
+ * WHAT THIS DOES:
+ * - Creates a DefaultButtonAnimationController to manage button pulsing animation
+ * - Sets the button's key equivalent to Enter (\r) so pressing Enter activates it
+ * - Marks the button cell as the default button (isDefaultButton = YES)
+ * - Retains the controller via objc_setAssociatedObject to keep it alive
+ * - CONDITIONALLY sets the controller as window delegate (NOT for GWDialog!)
+ * 
+ * WHY DELEGATE HANDLING IS CRITICAL:
+ * GWDialog and other windows with text fields need special handling.
+ * When an NSTextField becomes first responder, NSWindow calls the delegate method:
+ *   [delegate windowWillReturnFieldEditor:toObject:]
+ * 
+ * PROBLEM: On ARM64, if this delegate method isn't properly implemented with the
+ * correct type encoding, the Objective-C runtime can incorrectly use objc_msgSend_stret
+ * (structure-return calling convention) instead of objc_msgSend (pointer-return
+ * calling convention), causing a SIGSEGV crash when the field editor is requested.
+ * 
+ * SOLUTION: 
+ * 1. For GWDialog: Don't set a delegate at all. The animation controller still works
+ *    via NSNotificationCenter (windowDidBecomeKey, windowDidResignKey, etc.) and
+ *    doesn't need to be a delegate.
+ * 2. For other windows: Safely set the delegate after checking for existing delegates.
+ * 3. DefaultButtonAnimationController implements windowWillReturnFieldEditor:toObject:
+ *    returning nil, which tells NSWindow to use its default field editor.
+ * 
+ * FOCUS MANAGEMENT:
+ * By not setting a delegate on GWDialog, we preserve the text field's
+ * initialFirstResponder setup done in GWDialog+Eau.m, giving immediate focus
+ * with a blinking cursor when dialogs open. Users can type immediately.
+ */
 - (void) EAUsetDefaultButtonCell: (NSButtonCell *)aCell
 {
   EAULOG(@"NSWindow+Eau: EAUsetDefaultButtonCell called with cell %p", aCell);
@@ -605,24 +670,41 @@ static const void *kEAUDefaultButtonControllerKey = &kEAUDefaultButtonController
                            animationcontroller,
                            OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 
-  // Don't set delegate for GWDialog - it causes field editor crashes.
-  // The animation controller will work via notifications.
+  /* CRITICAL FOCUS MANAGEMENT:
+   * We deliberately DO NOT set the animation controller as delegate for GWDialog.
+   * 
+   * Why? GWDialog has text fields that need focus when the dialog opens. When a
+   * text field becomes first responder, NSWindow calls the delegate method
+   * windowWillReturnFieldEditor:toObject: to get a field editor.
+   * 
+   * If we set a delegate here, there's a risk of:
+   * 1. Method resolution issues causing objc_msgSend_stret crashes on ARM64
+   * 2. Interfering with GWDialog's own text field management
+   * 3. Breaking the initial first responder setup done in GWDialog+Eau.m
+   * 
+   * The animation controller doesn't need to be a delegate to work - it receives
+   * window notifications (windowDidBecomeKey, windowDidResignKey, etc.) via
+   * NSNotificationCenter, which is sufficient for controlling the button animation.
+   * 
+   * For other window types (non-GWDialog), we can safely set the delegate because
+   * they typically don't have the same text field focus requirements on open.
+   */
   if ([self isKindOfClass: NSClassFromString(@"GWDialog")])
     {
-      EAULOG(@"NSWindow+Eau: Not setting delegate for GWDialog to avoid field editor crash");
+      EAULOG(@"NSWindow+Eau: Skipping delegate assignment for GWDialog %p to preserve text field focus", self);
     }
   else
     {
-      // Guard against overriding existing delegates
+      // Guard against overriding existing delegates for non-GWDialog windows
       id currentDelegate = [self delegate];
       if (currentDelegate == nil || currentDelegate == animationcontroller)
         {
-          EAULOG(@"NSWindow+Eau: Setting window delegate to animation controller %p", animationcontroller);
+          EAULOG(@"NSWindow+Eau: Setting window delegate to animation controller %p for window %p", animationcontroller, self);
           [self setDelegate: animationcontroller];
         }
       else
         {
-          EAULOG(@"NSWindow+Eau: Preserving existing delegate %@, not overriding", currentDelegate);
+          EAULOG(@"NSWindow+Eau: Preserving existing delegate %@ for window %p", currentDelegate, self);
         }
     }
   

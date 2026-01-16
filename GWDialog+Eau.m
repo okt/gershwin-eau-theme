@@ -173,13 +173,19 @@ static void EAULayoutGWDialog(GWDialog *dialog)
     }
 
   // Set up key view loop for tab navigation.
+  // This enables the Tab key to cycle through: editField -> okButt -> cancelButt -> editField
   [editField setNextKeyView: okButt];
   [okButt setNextKeyView: cancelButt];
   [cancelButt setNextKeyView: editField];
+  EAULOG(@"EauDialog: Configured key view loop for tab navigation");
 
-  // Don't set initialFirstResponder here - let NSWindow handle it naturally
-  // to avoid triggering field editor before dialog is ready
-  EAULOG(@"EauDialog: Skipping initialFirstResponder to avoid field editor crash");
+  // Set initial first responder to the edit field for immediate keyboard input.
+  // This ensures the text field gets focus automatically when the dialog opens,
+  // so the cursor blinks and the user can type immediately without clicking.
+  // This is now safe because we don't set a problematic delegate on GWDialog
+  // (see NSWindow+Eau.m eau_setDefaultButtonCell for delegate handling).
+  [dialog setInitialFirstResponder: editField];
+  EAULOG(@"EauDialog: Set initial first responder to edit field %p", editField);
 
   // Position dialog using golden ratio centering.
   [dialog center];
@@ -190,8 +196,37 @@ static void EAULayoutGWDialog(GWDialog *dialog)
          [editField stringValue],
          (switchButt != nil) ? [switchButt title] : @"");
 }
-
-@implementation GWDialog (Eau)
+/* GWDialog (Eau) Category
+ * 
+ * Eau theme customization for GWDialog modal dialogs.
+ * 
+ * WHAT THIS DOES:
+ * - Swizzles GWDialog's initWithTitle:editText:switchTitle: to apply Eau layout
+ * - Adjusts dialog geometry and button placement per Eau design metrics
+ * - Configures keyboard shortcuts: Enter for OK, Escape for Cancel
+ * - Sets up default button for pulsating animation
+ * - Ensures text field receives focus immediately when dialog opens
+ * - Establishes tab navigation order: text field → OK → Cancel → text field
+ * 
+ * WHY WE DO THIS:
+ * - Users expect to type immediately when a dialog appears (no click required)
+ * - Enter key should activate the default (OK) button
+ * - Escape key should activate the Cancel button
+ * - Tab key should navigate between controls
+ * - Default button should pulse to show it's the primary action
+ * 
+ * FOCUS MANAGEMENT STRATEGY:
+ * The text field is set as initialFirstResponder in EAULayoutGWDialog().
+ * This works safely because:
+ * 1. We don't set a delegate on GWDialog windows (see NSWindow+Eau.m)
+ * 2. The DefaultButtonAnimationController implements windowWillReturnFieldEditor:toObject:
+ * 3. This prevents objc_msgSend_stret crashes on ARM64 when field editor is requested
+ * 
+ * DELEGATE HANDLING:
+ * GWDialog windows specifically DO NOT get a delegate set in NSWindow+Eau.m
+ * eau_setDefaultButtonCell(). This is intentional to avoid field editor issues.
+ * The animation controller still works via NSNotificationCenter.
+ */@implementation GWDialog (Eau)
 
 + (void)load
 {
@@ -210,8 +245,14 @@ static void EAULayoutGWDialog(GWDialog *dialog)
       method_exchangeImplementations(originalInit, eauInit);
     }
 
+  // Swizzle runModal to ensure window activation and keyboard focus
   Method originalRunModal = class_getInstanceMethod(dialogClass, @selector(runModal));
-  (void)originalRunModal;
+  Method eauRunModal = class_getInstanceMethod(dialogClass, @selector(eau_runModal));
+  if (originalRunModal && eauRunModal)
+    {
+      method_exchangeImplementations(originalRunModal, eauRunModal);
+      EAULOG(@"GWDialog+Eau: Swizzled runModal for focus management");
+    }
 
   // Swizzle NSWindow validRequestorForSendType:returnType: to avoid crashes
   // when services menu validates while GWDialog is modal.
@@ -228,17 +269,60 @@ static void EAULayoutGWDialog(GWDialog *dialog)
      to handle Enter and Escape keys. */
 }
 
+/* eau_initWithTitle:editText:switchTitle:
+ * Swizzled initializer for GWDialog that applies Eau theme layout.
+ * Called instead of the original initWithTitle:editText:switchTitle:.
+ * Performs layout adjustments, sets up keyboard shortcuts (Enter/Escape),
+ * configures the default button for pulsating animation, and ensures
+ * proper focus management so the text field is immediately ready for input.
+ */
 - (id)eau_initWithTitle: (NSString *)title
                editText: (NSString *)eText
             switchTitle: (NSString *)swTitle
 {
+  EAULOG(@"EauDialog: Eau-themed init starting for title='%@'", title);
+  
+  // Call the original implementation (which is now named eau_initWithTitle due to swizzling)
   self = [self eau_initWithTitle: title editText: eText switchTitle: swTitle];
   if (self != nil)
     {
-      EAULOG(@"EauDialog: init completed, applying layout");
+      EAULOG(@"EauDialog: Original init completed, applying Eau layout and focus setup");
       EAULayoutGWDialog((GWDialog *)self);
+      EAULOG(@"EauDialog: Initialization complete for dialog %p", self);
     }
   return self;
+}
+
+/* eau_runModal
+ * Swizzled runModal method that ensures proper window activation and focus.
+ * 
+ * CRITICAL FOR INPUT FOCUS:
+ * The original GWDialog runModal just calls [NSApp runModalForWindow:self].
+ * This is not enough - the window appears but doesn't become key, so it
+ * doesn't receive keyboard input. User has to click to give it focus.
+ * 
+ * We fix this by:
+ * 1. Activating the application (brings it to front)
+ * 2. Making the dialog window key (gives it keyboard focus)
+ * 3. Then running the modal loop
+ * 
+ * This ensures the text field cursor blinks immediately and keyboard works.
+ */
+- (NSModalResponse)eau_runModal
+{
+  EAULOG(@"GWDialog: eau_runModal called - activating app and making window key");
+  
+  // Activate the application to bring it to front
+  [[NSApplication sharedApplication] activateIgnoringOtherApps: YES];
+  
+  // Make this dialog the key window so it receives keyboard input
+  [self makeKeyAndOrderFront: nil];
+  
+  EAULOG(@"GWDialog: Window is now key: %d, first responder: %@", 
+         [self isKeyWindow], [[self firstResponder] class]);
+  
+  // Call the original runModal (which is now named eau_runModal due to swizzling)
+  return [self eau_runModal];
 }
 
 @end

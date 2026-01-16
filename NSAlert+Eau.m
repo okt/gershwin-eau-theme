@@ -1060,6 +1060,33 @@ static void setKeyEquivalent(NSButton *button)
 
 #pragma mark - NSAlert Category for Swizzling
 
+/* NSAlert (Eau) Category
+ * 
+ * Comprehensive NSAlert customization for the Eau theme.
+ * 
+ * WHAT THIS DOES:
+ * - Swizzles NSAlert's _setupPanel to use EauAlertPanel for custom appearance
+ * - Swizzles NSAlert's runModal to add focus management for text fields
+ * - Ensures any text fields in alerts receive focus immediately when shown
+ * - Sets up proper tab navigation between controls in the alert
+ * - Configures default button for pulsating animation
+ * 
+ * WHY WE DO THIS:
+ * - Users expect text fields in alerts to be immediately ready for input
+ * - The cursor should blink in text fields without requiring a click
+ * - Tab key should work to navigate between buttons and controls
+ * - Default button should pulse to indicate it's the primary action
+ * 
+ * FOCUS MANAGEMENT STRATEGY:
+ * When an alert appears, we search for editable text fields and set the first
+ * one found as the initialFirstResponder. This ensures:
+ * 1. The field editor activates automatically
+ * 2. The cursor blinks immediately
+ * 3. Keyboard input works without clicking
+ * 4. Tab navigation is properly configured
+ * 
+ * If no text field exists, focus goes to the default button.
+ */
 @implementation NSAlert (Eau)
 
 + (void) load
@@ -1228,6 +1255,48 @@ static void setKeyEquivalent(NSButton *button)
     if (window)
     {
         NSInteger result = NSAlertErrorReturn;
+
+        // FOCUS MANAGEMENT: Ensure any text fields in the alert receive focus immediately
+        // so the cursor blinks and keyboard input works without clicking.
+        NSView *contentView = [window contentView];
+        if (contentView)
+        {
+            NSArray *subviews = [contentView subviews];
+            NSTextField *firstTextField = nil;
+            
+            // Search for the first editable text field in the alert
+            for (NSView *view in subviews)
+            {
+                if ([view isKindOfClass:[NSTextField class]])
+                {
+                    NSTextField *textField = (NSTextField *)view;
+                    if ([textField isEditable])
+                    {
+                        firstTextField = textField;
+                        EAULOG(@"NSAlert+Eau: Found editable text field %p in alert", textField);
+                        break;
+                    }
+                }
+            }
+            
+            // Set initial first responder to enable immediate keyboard input
+            if (firstTextField)
+            {
+                EAULOG(@"NSAlert+Eau: Setting initial first responder to text field %p", firstTextField);
+                [window setInitialFirstResponder: firstTextField];
+            }
+            else
+            {
+                EAULOG(@"NSAlert+Eau: No editable text field found in alert");
+            }
+        }
+        
+        // CRITICAL: Make the alert window key so it receives keyboard input immediately.
+        // Without this, the alert appears but doesn't have focus - user must click it.
+        EAULOG(@"NSAlert+Eau: Activating app and making alert window key for immediate input");
+        [NSApp activateIgnoringOtherApps: YES];
+        [window makeKeyAndOrderFront: nil];
+        EAULOG(@"NSAlert+Eau: Alert window is now key: %d", [window isKeyWindow]);
 
         if ([window isKindOfClass: [EauAlertPanel class]])
         {
