@@ -24,6 +24,7 @@ Eau_OBJC_FILES = \
 		Eau+Browser.m\
 		Eau+Table.m\
 		Eau+TabView.m\
+		Eau+ResizeZones.m\
 		GSStandardDecorationView+Eau.m\
 		GSInfoPanel+Eau.m\
 		NSWindow+Eau.m\
