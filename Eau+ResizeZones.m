@@ -59,4 +59,25 @@
   return YES;
 }
 
+#pragma mark - Grow Box Zone
+
+/**
+ * Returns whether the theme wants a separate grow box resize zone.
+ * The grow box zone overlays the SE corner with a larger size,
+ * matching the visible grow box element drawn by EauGrowBoxView.
+ */
+- (BOOL)resizeZoneHasGrowBox
+{
+  return YES;
+}
+
+/**
+ * Returns the size of the grow box resize zone (square).
+ * This matches the visual grow box size drawn by EauGrowBoxView.
+ */
+- (CGFloat)resizeZoneGrowBoxSize
+{
+  return [NSScroller scrollerWidth];  // 16px - matches visual grow box
+}
+
 @end
