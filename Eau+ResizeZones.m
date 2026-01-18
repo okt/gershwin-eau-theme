@@ -80,4 +80,26 @@
   return METRICS_GROW_BOX_SIZE;
 }
 
+#pragma mark - Titlebar Corner Radius
+
+/**
+ * Returns the corner radius for rounded top corners of the window frame.
+ * Returns 0 for square corners.
+ * The window manager applies this via XCB shape mask.
+ */
+- (CGFloat)titlebarCornerRadius
+{
+  return METRICS_TITLEBAR_CORNER_RADIUS;
+}
+
+/**
+ * Returns the corner radius for rounded bottom corners of the window frame.
+ * Returns 0 for square bottom corners (typical Aqua style).
+ * Optional - if not implemented, window manager defaults to 0.
+ */
+- (CGFloat)windowBottomCornerRadius
+{
+  return METRICS_WINDOW_BOTTOM_CORNER_RADIUS;
+}
+
 @end

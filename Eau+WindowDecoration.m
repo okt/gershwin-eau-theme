@@ -1,4 +1,5 @@
 #import "Eau.h"
+#import "AppearanceMetrics.h"
 
 @interface Eau(EauWindowDecoration)
 
@@ -7,7 +8,6 @@
 
 #define TITLE_HEIGHT 24.0
 #define RESIZE_HEIGHT 9.0
-#define WINDOW_CORNER_RADIUS 0
 
 @implementation Eau(EauWindowDecoration)
 
@@ -106,7 +106,7 @@ static NSDictionary *titleTextAttributes[3] = {nil, nil, nil};
   NSColor* borderColor = [Eau controlStrokeColor];
   NSGradient* gradient = [self _windowTitlebarGradient];
 
-  CGFloat titleBarCornerRadius = WINDOW_CORNER_RADIUS;
+  CGFloat titleBarCornerRadius = METRICS_TITLEBAR_CORNER_RADIUS;
   NSRect titleRect = rect;
   titleRect.origin.x += 1;
   titleRect.size.width -= 1;

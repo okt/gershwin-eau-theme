@@ -89,6 +89,10 @@ static const float METRICS_RESIZE_EDGE_THICKNESS = 4.0;
 // Slightly larger than the visual grow box (drawn by EauGrowBoxView) for easier grabbing
 static const float METRICS_GROW_BOX_SIZE = 20.0;
 
+// Window corner radii for rounded corners
+static const float METRICS_TITLEBAR_CORNER_RADIUS = 6.0;
+static const float METRICS_WINDOW_BOTTOM_CORNER_RADIUS = 6.0;
+
 // Control Positioning in Dialogs
 // All spacing between dialog elements shall be a multiple of 4px (4, 8, 12, 16, 20, or 24).
 // Guidelines:
