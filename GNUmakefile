@@ -29,6 +29,7 @@ Eau_OBJC_FILES = \
 		EauGrowBoxView.m\
 		GSStandardDecorationView+Eau.m\
 		GSInfoPanel+Eau.m\
+		NSApplication+Eau.m\
 		NSWindow+Eau.m\
 		NSSegmentedCell+Eau.m\
 		NSTableView+Eau.m\
