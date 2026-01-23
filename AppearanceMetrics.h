@@ -89,7 +89,7 @@ static const float METRICS_RESIZE_EDGE_THICKNESS = 4.0;
 #define METRICS_GROW_BOX_SIZE 16.0
 
 // Window corner radii for rounded corners
-static const float METRICS_TITLEBAR_CORNER_RADIUS = 5.0;  // Matches Menu app corner radius
+static const float METRICS_TITLEBAR_CORNER_RADIUS = 10.0;  // Double to compensate for coordinate scaling
 static const float METRICS_WINDOW_BOTTOM_CORNER_RADIUS = 0.0;
 
 // Control Positioning in Dialogs

@@ -103,38 +103,82 @@ static NSDictionary *titleTextAttributes[3] = {nil, nil, nil};
 
 - (void) drawTitleBarBackground: (NSRect)rect {
 
-  NSColor* borderColor = [Eau controlStrokeColor];
   NSGradient* gradient = [self _windowTitlebarGradient];
+  CGFloat r = METRICS_TITLEBAR_CORNER_RADIUS;
 
-  CGFloat titleBarCornerRadius = METRICS_TITLEBAR_CORNER_RADIUS;
-  NSRect titleRect = rect;
-  titleRect.origin.x += 1;
-  titleRect.size.width -= 1;
-  NSRectFillUsingOperation(titleRect, NSCompositeClear);
-  NSRect titleinner = NSInsetRect(titleRect, titleBarCornerRadius, titleBarCornerRadius);
+  // Work with local coordinates like Menu's RoundedCornersView does
+  CGFloat x = floor(rect.origin.x);
+  CGFloat y = floor(rect.origin.y);
+  CGFloat width = floor(rect.size.width);
+  CGFloat height = floor(rect.size.height);
+
+  // Build path with rounded top corners only (matches Menu's RoundedCornersView approach)
   NSBezierPath* titleBarPath = [NSBezierPath bezierPath];
-  [titleBarPath moveToPoint: NSMakePoint(NSMinX(titleRect), NSMinY(titleRect))];
-  [titleBarPath lineToPoint: NSMakePoint(NSMaxX(titleRect), NSMinY(titleRect))];
-  [titleBarPath appendBezierPathWithArcWithCenter: NSMakePoint(NSMaxX(titleinner), NSMaxY(titleinner))
-                                           radius: titleBarCornerRadius
+
+  // Start at bottom-left, go clockwise
+  [titleBarPath moveToPoint: NSMakePoint(x, y)];
+  // Bottom edge
+  [titleBarPath lineToPoint: NSMakePoint(x + width, y)];
+  // Right edge up to arc start
+  [titleBarPath lineToPoint: NSMakePoint(x + width, y + height - r)];
+  // Top-right arc
+  [titleBarPath appendBezierPathWithArcWithCenter: NSMakePoint(x + width - r, y + height - r)
+                                           radius: r
                                        startAngle: 0
                                          endAngle: 90];
-  [titleBarPath appendBezierPathWithArcWithCenter: NSMakePoint(NSMinX(titleinner), NSMaxY(titleinner))
-                                           radius: titleBarCornerRadius
+  // Top edge
+  [titleBarPath lineToPoint: NSMakePoint(x + r, y + height)];
+  // Top-left arc
+  [titleBarPath appendBezierPathWithArcWithCenter: NSMakePoint(x + r, y + height - r)
+                                           radius: r
                                        startAngle: 90
                                          endAngle: 180];
+  // Left edge (closePath will complete this)
   [titleBarPath closePath];
 
-  NSBezierPath* linePath = [NSBezierPath bezierPath];
-  [linePath moveToPoint: NSMakePoint(NSMinX(titleRect), NSMinY(titleRect)+1)];
-  [linePath lineToPoint:  NSMakePoint(NSMaxX(titleRect), NSMinY(titleRect)+1)];
-
-  [borderColor setStroke];
   [gradient drawInBezierPath: titleBarPath angle: -90];
-  [titleBarPath setLineWidth: 1];
-  [titleBarPath stroke];
-  [linePath setLineWidth: 1];
-  [linePath stroke];
+
+  // Clear the corner areas to transparent for compositing
+  NSGraphicsContext *ctx = [NSGraphicsContext currentContext];
+  [ctx setCompositingOperation: NSCompositeClear];
+
+  // Top-left corner cutout
+  NSBezierPath *leftCorner = [NSBezierPath bezierPath];
+  [leftCorner moveToPoint: NSMakePoint(x, y + height)];
+  [leftCorner lineToPoint: NSMakePoint(x + r, y + height)];
+  [leftCorner appendBezierPathWithArcWithCenter: NSMakePoint(x + r, y + height - r)
+                                         radius: r
+                                     startAngle: 90
+                                       endAngle: 180
+                                      clockwise: NO];
+  [leftCorner closePath];
+  [[NSColor blackColor] setFill];
+  [leftCorner fill];
+
+  // Top-right corner cutout
+  NSBezierPath *rightCorner = [NSBezierPath bezierPath];
+  [rightCorner moveToPoint: NSMakePoint(x + width, y + height)];
+  [rightCorner lineToPoint: NSMakePoint(x + width - r, y + height)];
+  [rightCorner appendBezierPathWithArcWithCenter: NSMakePoint(x + width - r, y + height - r)
+                                          radius: r
+                                      startAngle: 90
+                                        endAngle: 0
+                                       clockwise: YES];
+  [rightCorner closePath];
+  [rightCorner fill];
+
+  // Reset compositing operation
+  [ctx setCompositingOperation: NSCompositeSourceOver];
+
+  // Draw 1px highlight line at top edge
+  NSBezierPath* highlightPath = [NSBezierPath bezierPath];
+  [highlightPath moveToPoint: NSMakePoint(x + r, y + height - 1)];
+  [highlightPath lineToPoint: NSMakePoint(x + width - r, y + height - 1)];
+
+  NSColor *highlightColor = [NSColor colorWithCalibratedRed:0.92 green:0.92 blue:0.92 alpha:1.0];
+  [highlightColor setStroke];
+  [highlightPath setLineWidth: 1.0];
+  [highlightPath stroke];
 }
 
 - (void) drawResizeBarRect: (NSRect)resizeBarRect
