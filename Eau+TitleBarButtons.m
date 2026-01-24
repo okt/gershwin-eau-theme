@@ -57,7 +57,13 @@
     NSRect titleRect = NSMakeRect(NSMaxX(closeRect), 0,
                                   NSMinX(rightRegion) - NSMaxX(closeRect),
                                   METRICS_TITLEBAR_HEIGHT);
-    [self drawTitleBarBackground:titleRect];
+
+    // Draw titlebar background gradient
+    NSColor *gradientColor1 = [NSColor colorWithCalibratedRed:0.833 green:0.833 blue:0.833 alpha:1];
+    NSColor *gradientColor2 = [NSColor colorWithCalibratedRed:0.667 green:0.667 blue:0.667 alpha:1];
+    NSGradient *gradient = [[NSGradient alloc] initWithStartingColor:gradientColor1
+                                                         endingColor:gradientColor2];
+    [gradient drawInRect:titleRect angle:-90];
 
     // Draw buttons
     GSThemeControlState state = GSThemeNormalState;

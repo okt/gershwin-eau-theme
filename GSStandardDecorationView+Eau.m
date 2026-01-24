@@ -80,8 +80,8 @@ static char originalFrameKey;  // Store original frame before zoom
 
     // Update to use new button style if it's an EauTitleBarButton
     if ([closeButton isKindOfClass:[EauTitleBarButton class]]) {
-      [(EauTitleBarButton *)closeButton setButtonType:EauTitleBarButtonTypeClose];
-      [(EauTitleBarButton *)closeButton setButtonPosition:EauTitleBarButtonPositionLeft];
+      [(EauTitleBarButton *)closeButton setTitleBarButtonType:EauTitleBarButtonTypeClose];
+      [(EauTitleBarButton *)closeButton setTitleBarButtonPosition:EauTitleBarButtonPositionLeft];
     }
   }
 
@@ -98,8 +98,8 @@ static char originalFrameKey;  // Store original frame before zoom
 
     // Update to use new button style if it's an EauTitleBarButton
     if ([miniaturizeButton isKindOfClass:[EauTitleBarButton class]]) {
-      [(EauTitleBarButton *)miniaturizeButton setButtonType:EauTitleBarButtonTypeMinimize];
-      [(EauTitleBarButton *)miniaturizeButton setButtonPosition:EauTitleBarButtonPositionRightLeft];
+      [(EauTitleBarButton *)miniaturizeButton setTitleBarButtonType:EauTitleBarButtonTypeMinimize];
+      [(EauTitleBarButton *)miniaturizeButton setTitleBarButtonPosition:EauTitleBarButtonPositionRightLeft];
     }
   }
 
@@ -132,8 +132,8 @@ static char originalFrameKey;  // Store original frame before zoom
 
       // Update button properties if it's the new type
       if ([zoomButton isKindOfClass:[EauTitleBarButton class]]) {
-        [(EauTitleBarButton *)zoomButton setButtonType:EauTitleBarButtonTypeMaximize];
-        [(EauTitleBarButton *)zoomButton setButtonPosition:EauTitleBarButtonPositionRightRight];
+        [(EauTitleBarButton *)zoomButton setTitleBarButtonType:EauTitleBarButtonTypeMaximize];
+        [(EauTitleBarButton *)zoomButton setTitleBarButtonPosition:EauTitleBarButtonPositionRightRight];
       }
 
       // Ensure the button is attached

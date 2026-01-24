@@ -17,8 +17,8 @@
 + (instancetype)closeButton
 {
     EauTitleBarButton *button = [[EauTitleBarButton alloc] init];
-    button.buttonType = EauTitleBarButtonTypeClose;
-    button.buttonPosition = EauTitleBarButtonPositionLeft;
+    button.titleBarButtonType = EauTitleBarButtonTypeClose;
+    button.titleBarButtonPosition = EauTitleBarButtonPositionLeft;
     [button setTag:NSWindowCloseButton];
     return button;
 }
@@ -26,8 +26,8 @@
 + (instancetype)minimizeButton
 {
     EauTitleBarButton *button = [[EauTitleBarButton alloc] init];
-    button.buttonType = EauTitleBarButtonTypeMinimize;
-    button.buttonPosition = EauTitleBarButtonPositionRightLeft;
+    button.titleBarButtonType = EauTitleBarButtonTypeMinimize;
+    button.titleBarButtonPosition = EauTitleBarButtonPositionRightLeft;
     [button setTag:NSWindowMiniaturizeButton];
     return button;
 }
@@ -35,8 +35,8 @@
 + (instancetype)maximizeButton
 {
     EauTitleBarButton *button = [[EauTitleBarButton alloc] init];
-    button.buttonType = EauTitleBarButtonTypeMaximize;
-    button.buttonPosition = EauTitleBarButtonPositionRightRight;
+    button.titleBarButtonType = EauTitleBarButtonTypeMaximize;
+    button.titleBarButtonPosition = EauTitleBarButtonPositionRightRight;
     [button setTag:NSWindowZoomButton];
     return button;
 }
@@ -45,7 +45,7 @@
 {
     self = [super init];
     if (self) {
-        [self setButtonType:NSMomentaryChangeButton];
+        [super setButtonType:NSMomentaryChangeButton];
         [self setBordered:YES];
         [self setRefusesFirstResponder:YES];
         [self setImagePosition:NSNoImage];
@@ -54,22 +54,22 @@
     return self;
 }
 
-- (EauTitleBarButtonType)buttonType
+- (EauTitleBarButtonType)titleBarButtonType
 {
     return [(EauTitleBarButtonCell *)[self cell] buttonType];
 }
 
-- (void)setButtonType:(EauTitleBarButtonType)type
+- (void)setTitleBarButtonType:(EauTitleBarButtonType)type
 {
     [(EauTitleBarButtonCell *)[self cell] setButtonType:type];
 }
 
-- (EauTitleBarButtonPosition)buttonPosition
+- (EauTitleBarButtonPosition)titleBarButtonPosition
 {
     return [(EauTitleBarButtonCell *)[self cell] buttonPosition];
 }
 
-- (void)setButtonPosition:(EauTitleBarButtonPosition)position
+- (void)setTitleBarButtonPosition:(EauTitleBarButtonPosition)position
 {
     [(EauTitleBarButtonCell *)[self cell] setButtonPosition:position];
 }
@@ -89,34 +89,6 @@
 - (BOOL)isFlipped
 {
     return NO;
-}
-
-- (void)mouseEntered:(NSEvent *)event
-{
-    [self setNeedsDisplay:YES];
-}
-
-- (void)mouseExited:(NSEvent *)event
-{
-    [self setNeedsDisplay:YES];
-}
-
-- (void)updateTrackingAreas
-{
-    [super updateTrackingAreas];
-
-    // Remove existing tracking areas
-    for (NSTrackingArea *area in [self trackingAreas]) {
-        [self removeTrackingArea:area];
-    }
-
-    // Add new tracking area for hover
-    NSTrackingArea *trackingArea = [[NSTrackingArea alloc]
-        initWithRect:[self bounds]
-             options:(NSTrackingMouseEnteredAndExited | NSTrackingActiveInActiveApp)
-               owner:self
-            userInfo:nil];
-    [self addTrackingArea:trackingArea];
 }
 
 @end

@@ -8,8 +8,8 @@
 
 @interface EauTitleBarButton : NSButton
 
-@property (nonatomic, assign) EauTitleBarButtonType buttonType;
-@property (nonatomic, assign) EauTitleBarButtonPosition buttonPosition;
+@property (nonatomic, assign) EauTitleBarButtonType titleBarButtonType;
+@property (nonatomic, assign) EauTitleBarButtonPosition titleBarButtonPosition;
 @property (nonatomic, assign) BOOL isWindowActive;
 
 + (instancetype)closeButton;
