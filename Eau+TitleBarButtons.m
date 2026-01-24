@@ -79,47 +79,62 @@
 
 - (void)drawCloseButtonInRect:(NSRect)rect state:(GSThemeControlState)state active:(BOOL)active
 {
+    BOOL hovered = (state == GSThemeHighlightedState);
     [self drawEdgeButtonInRect:rect
                       position:EauTitleBarButtonPositionLeft
+                    buttonType:0
                         active:active
-                   highlighted:(state == GSThemeHighlightedState)];
+                       hovered:hovered];
     [self drawCloseIconInRect:NSInsetRect(rect, METRICS_TITLEBAR_ICON_INSET, METRICS_TITLEBAR_ICON_INSET)
-                    withColor:[self iconColorForActive:active highlighted:(state == GSThemeHighlightedState)]];
+                    withColor:[self iconColorForActive:active highlighted:hovered]];
 }
 
 - (void)drawMinimizeButtonInRect:(NSRect)rect state:(GSThemeControlState)state active:(BOOL)active
 {
+    BOOL hovered = (state == GSThemeHighlightedState);
     [self drawEdgeButtonInRect:rect
                       position:EauTitleBarButtonPositionRightLeft
+                    buttonType:1
                         active:active
-                   highlighted:(state == GSThemeHighlightedState)];
+                       hovered:hovered];
     [self drawMinimizeIconInRect:NSInsetRect(rect, METRICS_TITLEBAR_ICON_INSET, METRICS_TITLEBAR_ICON_INSET)
-                       withColor:[self iconColorForActive:active highlighted:(state == GSThemeHighlightedState)]];
+                       withColor:[self iconColorForActive:active highlighted:hovered]];
 }
 
 - (void)drawMaximizeButtonInRect:(NSRect)rect state:(GSThemeControlState)state active:(BOOL)active
 {
+    BOOL hovered = (state == GSThemeHighlightedState);
     [self drawEdgeButtonInRect:rect
                       position:EauTitleBarButtonPositionRightRight
+                    buttonType:2
                         active:active
-                   highlighted:(state == GSThemeHighlightedState)];
+                       hovered:hovered];
     [self drawMaximizeIconInRect:NSInsetRect(rect, METRICS_TITLEBAR_ICON_INSET, METRICS_TITLEBAR_ICON_INSET)
-                       withColor:[self iconColorForActive:active highlighted:(state == GSThemeHighlightedState)]];
+                       withColor:[self iconColorForActive:active highlighted:hovered]];
 }
 
 #pragma mark - Icon Drawing
 
 - (void)drawCloseIconInRect:(NSRect)rect withColor:(NSColor *)color
 {
+    if (!color) return;  // Don't draw on inactive windows
+
+    // Make icon rect square by adding extra horizontal inset if needed
+    CGFloat extraHInset = (NSWidth(rect) - NSHeight(rect)) / 2.0;
+    if (extraHInset > 0) {
+        rect = NSInsetRect(rect, extraHInset, 0);
+    }
+
     NSBezierPath *path = [NSBezierPath bezierPath];
     [path setLineWidth:METRICS_TITLEBAR_ICON_STROKE];
     [path setLineCapStyle:NSRoundLineCapStyle];
 
-    // X icon
-    [path moveToPoint:NSMakePoint(NSMinX(rect), NSMinY(rect))];
-    [path lineToPoint:NSMakePoint(NSMaxX(rect), NSMaxY(rect))];
-    [path moveToPoint:NSMakePoint(NSMaxX(rect), NSMinY(rect))];
-    [path lineToPoint:NSMakePoint(NSMinX(rect), NSMaxY(rect))];
+    // Lowercase x style - shorter strokes, more square
+    CGFloat inset = NSWidth(rect) * 0.15;
+    [path moveToPoint:NSMakePoint(NSMinX(rect) + inset, NSMinY(rect) + inset)];
+    [path lineToPoint:NSMakePoint(NSMaxX(rect) - inset, NSMaxY(rect) - inset)];
+    [path moveToPoint:NSMakePoint(NSMaxX(rect) - inset, NSMinY(rect) + inset)];
+    [path lineToPoint:NSMakePoint(NSMinX(rect) + inset, NSMaxY(rect) - inset)];
 
     [color setStroke];
     [path stroke];
@@ -127,15 +142,27 @@
 
 - (void)drawMinimizeIconInRect:(NSRect)rect withColor:(NSColor *)color
 {
+    if (!color) return;  // Don't draw on inactive windows
+
+    // Make icon rect square by adding extra horizontal inset if needed
+    CGFloat extraHInset = (NSWidth(rect) - NSHeight(rect)) / 2.0;
+    if (extraHInset > 0) {
+        rect = NSInsetRect(rect, extraHInset, 0);
+    }
+
     NSBezierPath *path = [NSBezierPath bezierPath];
     [path setLineWidth:METRICS_TITLEBAR_ICON_STROKE];
     [path setLineCapStyle:NSRoundLineCapStyle];
     [path setLineJoinStyle:NSRoundLineJoinStyle];
 
-    // Down triangle (minimize)
-    [path moveToPoint:NSMakePoint(NSMinX(rect), NSMaxY(rect) - 2)];
-    [path lineToPoint:NSMakePoint(NSMidX(rect), NSMinY(rect) + 2)];
-    [path lineToPoint:NSMakePoint(NSMaxX(rect), NSMaxY(rect) - 2)];
+    // Squat down triangle - reduce height by 30%
+    CGFloat heightReduction = NSHeight(rect) * 0.3;
+    CGFloat top = NSMaxY(rect) - heightReduction / 2.0;
+    CGFloat bottom = NSMinY(rect) + heightReduction / 2.0;
+    [path moveToPoint:NSMakePoint(NSMinX(rect), top)];
+    [path lineToPoint:NSMakePoint(NSMidX(rect), bottom)];
+    [path lineToPoint:NSMakePoint(NSMaxX(rect), top)];
+    [path closePath];
 
     [color setStroke];
     [path stroke];
@@ -143,15 +170,27 @@
 
 - (void)drawMaximizeIconInRect:(NSRect)rect withColor:(NSColor *)color
 {
+    if (!color) return;  // Don't draw on inactive windows
+
+    // Make icon rect square by adding extra horizontal inset if needed
+    CGFloat extraHInset = (NSWidth(rect) - NSHeight(rect)) / 2.0;
+    if (extraHInset > 0) {
+        rect = NSInsetRect(rect, extraHInset, 0);
+    }
+
     NSBezierPath *path = [NSBezierPath bezierPath];
     [path setLineWidth:METRICS_TITLEBAR_ICON_STROKE];
     [path setLineCapStyle:NSRoundLineCapStyle];
     [path setLineJoinStyle:NSRoundLineJoinStyle];
 
-    // Up triangle (maximize)
-    [path moveToPoint:NSMakePoint(NSMinX(rect), NSMinY(rect) + 2)];
-    [path lineToPoint:NSMakePoint(NSMidX(rect), NSMaxY(rect) - 2)];
-    [path lineToPoint:NSMakePoint(NSMaxX(rect), NSMinY(rect) + 2)];
+    // Squat up triangle - reduce height by 30%
+    CGFloat heightReduction = NSHeight(rect) * 0.3;
+    CGFloat top = NSMaxY(rect) - heightReduction / 2.0;
+    CGFloat bottom = NSMinY(rect) + heightReduction / 2.0;
+    [path moveToPoint:NSMakePoint(NSMinX(rect), bottom)];
+    [path lineToPoint:NSMakePoint(NSMidX(rect), top)];
+    [path lineToPoint:NSMakePoint(NSMaxX(rect), bottom)];
+    [path closePath];
 
     [color setStroke];
     [path stroke];
@@ -159,32 +198,55 @@
 
 #pragma mark - Private Helpers
 
+// buttonType: 0=close, 1=minimize, 2=maximize
 - (void)drawEdgeButtonInRect:(NSRect)rect
                     position:(EauTitleBarButtonPosition)position
+                  buttonType:(NSInteger)buttonType
                       active:(BOOL)active
-                 highlighted:(BOOL)highlighted
+                     hovered:(BOOL)hovered
 {
-    // Get gradient colors
+    // Get button gradient colors
     NSColor *gradientColor1;
     NSColor *gradientColor2;
 
-    if (active) {
-        gradientColor1 = [NSColor colorWithCalibratedRed:0.833 green:0.833 blue:0.833 alpha:1];
-        gradientColor2 = [NSColor colorWithCalibratedRed:0.667 green:0.667 blue:0.667 alpha:1];
+    if (hovered) {
+        // Hover colors - traffic light colors (apply to ALL windows, active and inactive)
+        switch (buttonType) {
+            case 0:  // Close - Red
+                gradientColor1 = [NSColor colorWithCalibratedRed:0.95 green:0.45 blue:0.42 alpha:1];
+                gradientColor2 = [NSColor colorWithCalibratedRed:0.85 green:0.30 blue:0.27 alpha:1];
+                break;
+            case 1:  // Minimize - Yellow
+                gradientColor1 = [NSColor colorWithCalibratedRed:0.95 green:0.75 blue:0.25 alpha:1];
+                gradientColor2 = [NSColor colorWithCalibratedRed:0.85 green:0.65 blue:0.15 alpha:1];
+                break;
+            case 2:  // Maximize - Green
+                gradientColor1 = [NSColor colorWithCalibratedRed:0.35 green:0.78 blue:0.35 alpha:1];
+                gradientColor2 = [NSColor colorWithCalibratedRed:0.25 green:0.68 blue:0.25 alpha:1];
+                break;
+            default:
+                // Fallback to gray
+                gradientColor1 = [NSColor colorWithCalibratedRed:0.65 green:0.65 blue:0.65 alpha:1];
+                gradientColor2 = [NSColor colorWithCalibratedRed:0.45 green:0.45 blue:0.45 alpha:1];
+                break;
+        }
+    } else if (active) {
+        // Active window - dark gray gradient for strong button contrast
+        gradientColor1 = [NSColor colorWithCalibratedRed:0.65 green:0.65 blue:0.65 alpha:1];
+        gradientColor2 = [NSColor colorWithCalibratedRed:0.45 green:0.45 blue:0.45 alpha:1];
     } else {
-        gradientColor1 = [NSColor colorWithCalibratedRed:0.9 green:0.9 blue:0.9 alpha:1];
-        gradientColor2 = [NSColor colorWithCalibratedRed:0.8 green:0.8 blue:0.8 alpha:1];
-    }
-
-    if (highlighted) {
-        gradientColor1 = [gradientColor1 shadowWithLevel:0.15];
-        gradientColor2 = [gradientColor2 shadowWithLevel:0.15];
+        // Inactive window - dimmed gray colors
+        gradientColor1 = [NSColor colorWithCalibratedRed:0.75 green:0.75 blue:0.75 alpha:1];
+        gradientColor2 = [NSColor colorWithCalibratedRed:0.6 green:0.6 blue:0.6 alpha:1];
     }
 
     NSGradient *gradient = [[NSGradient alloc] initWithStartingColor:gradientColor1
                                                          endingColor:gradientColor2];
 
     NSColor *borderColor = [Eau controlStrokeColor];
+
+    // Top border color - matches titlebar top edge (slightly lighter for visual trick)
+    NSColor *topBorderColor = [NSColor colorWithCalibratedRed:0.5 green:0.5 blue:0.5 alpha:1.0];
 
     // Create path with appropriate corner rounding
     NSBezierPath *path = [self buttonPathForRect:rect position:position];
@@ -196,6 +258,26 @@
     [borderColor setStroke];
     [path setLineWidth:1.0];
     [path stroke];
+
+    // Draw top border line (replicates titlebar top edge on buttons)
+    NSBezierPath *topLine = [NSBezierPath bezierPath];
+    CGFloat radius = METRICS_TITLEBAR_BUTTON_INNER_RADIUS;
+    if (position == EauTitleBarButtonPositionLeft) {
+        // Close button: line from after top-left arc to right edge
+        [topLine moveToPoint:NSMakePoint(NSMinX(rect) + radius, NSMaxY(rect) - 0.5)];
+        [topLine lineToPoint:NSMakePoint(NSMaxX(rect), NSMaxY(rect) - 0.5)];
+    } else if (position == EauTitleBarButtonPositionRightRight) {
+        // Maximize/edge button: line from left edge to before top-right arc
+        [topLine moveToPoint:NSMakePoint(NSMinX(rect), NSMaxY(rect) - 0.5)];
+        [topLine lineToPoint:NSMakePoint(NSMaxX(rect) - radius, NSMaxY(rect) - 0.5)];
+    } else {
+        // Middle button (minimize when both exist): full width line
+        [topLine moveToPoint:NSMakePoint(NSMinX(rect), NSMaxY(rect) - 0.5)];
+        [topLine lineToPoint:NSMakePoint(NSMaxX(rect), NSMaxY(rect) - 0.5)];
+    }
+    [topBorderColor setStroke];
+    [topLine setLineWidth:1.0];
+    [topLine stroke];
 
     // Draw divider for minimize button
     if (position == EauTitleBarButtonPositionRightLeft) {
@@ -215,55 +297,33 @@
 
     switch (position) {
         case EauTitleBarButtonPositionLeft:
-            // Close button: rounded on right side only, plus top-left corner for window
-            [path moveToPoint:NSMakePoint(NSMinX(frame), NSMinY(frame))];
-            [path lineToPoint:NSMakePoint(NSMaxX(frame) - radius, NSMinY(frame))];
-            [path appendBezierPathWithArcWithCenter:NSMakePoint(NSMaxX(frame) - radius, NSMinY(frame) + radius)
-                                             radius:radius
-                                         startAngle:270
-                                           endAngle:0];
-            [path lineToPoint:NSMakePoint(NSMaxX(frame), NSMaxY(frame) - radius)];
-            [path appendBezierPathWithArcWithCenter:NSMakePoint(NSMaxX(frame) - radius, NSMaxY(frame) - radius)
-                                             radius:radius
-                                         startAngle:0
-                                           endAngle:90];
-            [path lineToPoint:NSMakePoint(NSMinX(frame) + radius, NSMaxY(frame))];
+            // Close button: ONLY top-left corner rounded, inner edge (right) is straight
+            [path moveToPoint:NSMakePoint(NSMinX(frame), NSMinY(frame))];  // bottom-left
+            [path lineToPoint:NSMakePoint(NSMaxX(frame), NSMinY(frame))];  // bottom-right (straight)
+            [path lineToPoint:NSMakePoint(NSMaxX(frame), NSMaxY(frame))];  // top-right (straight inner edge)
+            [path lineToPoint:NSMakePoint(NSMinX(frame) + radius, NSMaxY(frame))];  // to top-left arc start
             [path appendBezierPathWithArcWithCenter:NSMakePoint(NSMinX(frame) + radius, NSMaxY(frame) - radius)
                                              radius:radius
                                          startAngle:90
-                                           endAngle:180];
-            [path lineToPoint:NSMakePoint(NSMinX(frame), NSMinY(frame))];
+                                           endAngle:180];  // top-left corner
             [path closePath];
             break;
 
         case EauTitleBarButtonPositionRightLeft:
-            // Minimize button: rounded on left side only
-            [path moveToPoint:NSMakePoint(NSMinX(frame) + radius, NSMinY(frame))];
-            [path lineToPoint:NSMakePoint(NSMaxX(frame), NSMinY(frame))];
-            [path lineToPoint:NSMakePoint(NSMaxX(frame), NSMaxY(frame))];
-            [path lineToPoint:NSMakePoint(NSMinX(frame) + radius, NSMaxY(frame))];
-            [path appendBezierPathWithArcWithCenter:NSMakePoint(NSMinX(frame) + radius, NSMaxY(frame) - radius)
-                                             radius:radius
-                                         startAngle:90
-                                           endAngle:180];
-            [path lineToPoint:NSMakePoint(NSMinX(frame), NSMinY(frame) + radius)];
-            [path appendBezierPathWithArcWithCenter:NSMakePoint(NSMinX(frame) + radius, NSMinY(frame) + radius)
-                                             radius:radius
-                                         startAngle:180
-                                           endAngle:270];
-            [path closePath];
+            // Minimize button: NO rounding at all (middle button, both edges face title)
+            [path appendBezierPathWithRect:frame];
             break;
 
         case EauTitleBarButtonPositionRightRight:
-            // Maximize button: top-right corner rounded
-            [path moveToPoint:NSMakePoint(NSMinX(frame), NSMinY(frame))];
-            [path lineToPoint:NSMakePoint(NSMaxX(frame), NSMinY(frame))];
-            [path lineToPoint:NSMakePoint(NSMaxX(frame), NSMaxY(frame) - radius)];
+            // Maximize button: ONLY top-right corner rounded, inner edge (left) is straight
+            [path moveToPoint:NSMakePoint(NSMinX(frame), NSMinY(frame))];  // bottom-left
+            [path lineToPoint:NSMakePoint(NSMaxX(frame), NSMinY(frame))];  // bottom-right
+            [path lineToPoint:NSMakePoint(NSMaxX(frame), NSMaxY(frame) - radius)];  // up right edge to arc
             [path appendBezierPathWithArcWithCenter:NSMakePoint(NSMaxX(frame) - radius, NSMaxY(frame) - radius)
                                              radius:radius
                                          startAngle:0
-                                           endAngle:90];
-            [path lineToPoint:NSMakePoint(NSMinX(frame), NSMaxY(frame))];
+                                           endAngle:90];  // top-right corner
+            [path lineToPoint:NSMakePoint(NSMinX(frame), NSMaxY(frame))];  // straight inner edge (left)
             [path closePath];
             break;
     }
@@ -273,12 +333,13 @@
 
 - (NSColor *)iconColorForActive:(BOOL)active highlighted:(BOOL)highlighted
 {
-    NSColor *color;
-    if (active) {
-        color = [NSColor colorWithCalibratedRed:0.3 green:0.3 blue:0.3 alpha:1.0];
-    } else {
-        color = [NSColor colorWithCalibratedRed:0.5 green:0.5 blue:0.5 alpha:1.0];
+    // Don't draw icons on inactive windows
+    if (!active) {
+        return nil;
     }
+
+    // Darker icon color for active windows (0.20)
+    NSColor *color = [NSColor colorWithCalibratedRed:0.20 green:0.20 blue:0.20 alpha:1.0];
 
     if (highlighted) {
         color = [color shadowWithLevel:0.2];
