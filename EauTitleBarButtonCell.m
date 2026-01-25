@@ -88,6 +88,26 @@
     // Fill with gradient
     [gradient drawInBezierPath:path angle:-90];
 
+    // Draw inner highlight near top (gives raised 3D look)
+    NSColor *highlightColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.35];
+    NSBezierPath *highlightPath = [NSBezierPath bezierPath];
+    CGFloat highlightY = NSMaxY(frame) - 2.5;
+    [highlightPath moveToPoint:NSMakePoint(NSMinX(frame) + 1, highlightY)];
+    [highlightPath lineToPoint:NSMakePoint(NSMaxX(frame) - 1, highlightY)];
+    [highlightColor setStroke];
+    [highlightPath setLineWidth:1.0];
+    [highlightPath stroke];
+
+    // Draw inner shadow near bottom (gives depth)
+    NSColor *shadowColor = [NSColor colorWithCalibratedWhite:0.0 alpha:0.15];
+    NSBezierPath *shadowPath = [NSBezierPath bezierPath];
+    CGFloat shadowY = NSMinY(frame) + 1.5;
+    [shadowPath moveToPoint:NSMakePoint(NSMinX(frame) + 1, shadowY)];
+    [shadowPath lineToPoint:NSMakePoint(NSMaxX(frame) - 1, shadowY)];
+    [shadowColor setStroke];
+    [shadowPath setLineWidth:1.0];
+    [shadowPath stroke];
+
     // Stroke border
     [borderColor setStroke];
     [path setLineWidth:1.0];
