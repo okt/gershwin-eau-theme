@@ -23,25 +23,27 @@
 
 - (NSRect)minimizeButtonRectForTitlebarWidth:(CGFloat)width
 {
-    // Minimize button on left side of right region
-    CGFloat x = width - METRICS_TITLEBAR_RIGHT_REGION_WIDTH;
-    CGFloat buttonWidth = METRICS_TITLEBAR_RIGHT_REGION_WIDTH / 2.0;
-    return NSMakeRect(x, 0, buttonWidth, METRICS_TITLEBAR_HEIGHT);
+    // Minimize at BOTTOM half of stacked region
+    CGFloat x = width - METRICS_TITLEBAR_STACKED_REGION_WIDTH;
+    return NSMakeRect(x, 0,
+                      METRICS_TITLEBAR_STACKED_REGION_WIDTH,
+                      METRICS_TITLEBAR_STACKED_BUTTON_HEIGHT);
 }
 
 - (NSRect)maximizeButtonRectForTitlebarWidth:(CGFloat)width
 {
-    // Maximize button on right side of right region
-    CGFloat x = width - (METRICS_TITLEBAR_RIGHT_REGION_WIDTH / 2.0);
-    CGFloat buttonWidth = METRICS_TITLEBAR_RIGHT_REGION_WIDTH / 2.0;
-    return NSMakeRect(x, 0, buttonWidth, METRICS_TITLEBAR_HEIGHT);
+    // Zoom at TOP half of stacked region
+    CGFloat x = width - METRICS_TITLEBAR_STACKED_REGION_WIDTH;
+    CGFloat y = METRICS_TITLEBAR_STACKED_BUTTON_HEIGHT;
+    return NSMakeRect(x, y,
+                      METRICS_TITLEBAR_STACKED_REGION_WIDTH,
+                      METRICS_TITLEBAR_STACKED_BUTTON_HEIGHT);
 }
 
 - (NSRect)rightButtonRegionRectForTitlebarWidth:(CGFloat)width
 {
-    // Combined minimize+maximize region
-    return NSMakeRect(width - METRICS_TITLEBAR_RIGHT_REGION_WIDTH, 0,
-                      METRICS_TITLEBAR_RIGHT_REGION_WIDTH, METRICS_TITLEBAR_HEIGHT);
+    return NSMakeRect(width - METRICS_TITLEBAR_STACKED_REGION_WIDTH, 0,
+                      METRICS_TITLEBAR_STACKED_REGION_WIDTH, METRICS_TITLEBAR_HEIGHT);
 }
 
 #pragma mark - Drawing Methods
@@ -93,11 +95,15 @@
 {
     BOOL hovered = (state == GSThemeHighlightedState);
     [self drawEdgeButtonInRect:rect
-                      position:EauTitleBarButtonPositionRightLeft
+                      position:EauTitleBarButtonPositionRightBottom
                     buttonType:1
                         active:active
                        hovered:hovered];
-    [self drawMinimizeIconInRect:NSInsetRect(rect, METRICS_TITLEBAR_ICON_INSET, METRICS_TITLEBAR_ICON_INSET)
+    // Inset for icon - smaller vertical inset for half-height buttons
+    CGFloat hInset = 8.0;
+    CGFloat vInset = 2.0;
+    NSRect iconRect = NSInsetRect(rect, hInset, vInset);
+    [self drawMinimizeIconInRect:iconRect
                        withColor:[self iconColorForActive:active highlighted:hovered]];
 }
 
@@ -105,11 +111,15 @@
 {
     BOOL hovered = (state == GSThemeHighlightedState);
     [self drawEdgeButtonInRect:rect
-                      position:EauTitleBarButtonPositionRightRight
+                      position:EauTitleBarButtonPositionRightTop
                     buttonType:2
                         active:active
                        hovered:hovered];
-    [self drawMaximizeIconInRect:NSInsetRect(rect, METRICS_TITLEBAR_ICON_INSET, METRICS_TITLEBAR_ICON_INSET)
+    // Inset for icon - smaller vertical inset for half-height buttons
+    CGFloat hInset = 8.0;
+    CGFloat vInset = 2.0;
+    NSRect iconRect = NSInsetRect(rect, hInset, vInset);
+    [self drawMaximizeIconInRect:iconRect
                        withColor:[self iconColorForActive:active highlighted:hovered]];
 }
 
@@ -142,9 +152,8 @@
 
 - (void)drawMinimizeIconInRect:(NSRect)rect withColor:(NSColor *)color
 {
-    if (!color) return;  // Don't draw on inactive windows
+    if (!color) return;
 
-    // Make icon rect square by adding extra horizontal inset if needed
     CGFloat extraHInset = (NSWidth(rect) - NSHeight(rect)) / 2.0;
     if (extraHInset > 0) {
         rect = NSInsetRect(rect, extraHInset, 0);
@@ -153,16 +162,12 @@
     NSBezierPath *path = [NSBezierPath bezierPath];
     [path setLineWidth:METRICS_TITLEBAR_ICON_STROKE];
     [path setLineCapStyle:NSRoundLineCapStyle];
-    [path setLineJoinStyle:NSRoundLineJoinStyle];
 
-    // Squat down triangle - reduce height by 30%
-    CGFloat heightReduction = NSHeight(rect) * 0.3;
-    CGFloat top = NSMaxY(rect) - heightReduction / 2.0;
-    CGFloat bottom = NSMinY(rect) + heightReduction / 2.0;
-    [path moveToPoint:NSMakePoint(NSMinX(rect), top)];
-    [path lineToPoint:NSMakePoint(NSMidX(rect), bottom)];
-    [path lineToPoint:NSMakePoint(NSMaxX(rect), top)];
-    [path closePath];
+    // Horizontal line (minus symbol)
+    CGFloat inset = NSWidth(rect) * 0.2;
+    CGFloat midY = NSMidY(rect);
+    [path moveToPoint:NSMakePoint(NSMinX(rect) + inset, midY)];
+    [path lineToPoint:NSMakePoint(NSMaxX(rect) - inset, midY)];
 
     [color setStroke];
     [path stroke];
@@ -170,9 +175,8 @@
 
 - (void)drawMaximizeIconInRect:(NSRect)rect withColor:(NSColor *)color
 {
-    if (!color) return;  // Don't draw on inactive windows
+    if (!color) return;
 
-    // Make icon rect square by adding extra horizontal inset if needed
     CGFloat extraHInset = (NSWidth(rect) - NSHeight(rect)) / 2.0;
     if (extraHInset > 0) {
         rect = NSInsetRect(rect, extraHInset, 0);
@@ -181,16 +185,18 @@
     NSBezierPath *path = [NSBezierPath bezierPath];
     [path setLineWidth:METRICS_TITLEBAR_ICON_STROKE];
     [path setLineCapStyle:NSRoundLineCapStyle];
-    [path setLineJoinStyle:NSRoundLineJoinStyle];
 
-    // Squat up triangle - reduce height by 30%
-    CGFloat heightReduction = NSHeight(rect) * 0.3;
-    CGFloat top = NSMaxY(rect) - heightReduction / 2.0;
-    CGFloat bottom = NSMinY(rect) + heightReduction / 2.0;
-    [path moveToPoint:NSMakePoint(NSMinX(rect), bottom)];
-    [path lineToPoint:NSMakePoint(NSMidX(rect), top)];
-    [path lineToPoint:NSMakePoint(NSMaxX(rect), bottom)];
-    [path closePath];
+    // Plus symbol
+    CGFloat inset = NSWidth(rect) * 0.2;
+    CGFloat midX = NSMidX(rect);
+    CGFloat midY = NSMidY(rect);
+
+    // Horizontal line
+    [path moveToPoint:NSMakePoint(NSMinX(rect) + inset, midY)];
+    [path lineToPoint:NSMakePoint(NSMaxX(rect) - inset, midY)];
+    // Vertical line
+    [path moveToPoint:NSMakePoint(midX, NSMinY(rect) + inset)];
+    [path lineToPoint:NSMakePoint(midX, NSMaxY(rect) - inset)];
 
     [color setStroke];
     [path stroke];
@@ -266,24 +272,21 @@
         // Close button: line from after top-left arc to right edge
         [topLine moveToPoint:NSMakePoint(NSMinX(rect) + radius, NSMaxY(rect) - 0.5)];
         [topLine lineToPoint:NSMakePoint(NSMaxX(rect), NSMaxY(rect) - 0.5)];
-    } else if (position == EauTitleBarButtonPositionRightRight) {
-        // Maximize/edge button: line from left edge to before top-right arc
+        [topBorderColor setStroke];
+        [topLine setLineWidth:1.0];
+        [topLine stroke];
+    } else if (position == EauTitleBarButtonPositionRightTop) {
+        // Zoom button (top of stack): line from left edge to before top-right arc
         [topLine moveToPoint:NSMakePoint(NSMinX(rect), NSMaxY(rect) - 0.5)];
         [topLine lineToPoint:NSMakePoint(NSMaxX(rect) - radius, NSMaxY(rect) - 0.5)];
-    } else {
-        // Middle button (minimize when both exist): full width line
-        [topLine moveToPoint:NSMakePoint(NSMinX(rect), NSMaxY(rect) - 0.5)];
-        [topLine lineToPoint:NSMakePoint(NSMaxX(rect), NSMaxY(rect) - 0.5)];
-    }
-    [topBorderColor setStroke];
-    [topLine setLineWidth:1.0];
-    [topLine stroke];
+        [topBorderColor setStroke];
+        [topLine setLineWidth:1.0];
+        [topLine stroke];
 
-    // Draw divider for minimize button
-    if (position == EauTitleBarButtonPositionRightLeft) {
+        // Draw horizontal divider at bottom of zoom button (between zoom and minimize)
         NSBezierPath *divider = [NSBezierPath bezierPath];
-        [divider moveToPoint:NSMakePoint(NSMaxX(rect), NSMinY(rect) + 4)];
-        [divider lineToPoint:NSMakePoint(NSMaxX(rect), NSMaxY(rect) - 4)];
+        [divider moveToPoint:NSMakePoint(NSMinX(rect), NSMinY(rect) + 0.5)];
+        [divider lineToPoint:NSMakePoint(NSMaxX(rect), NSMinY(rect) + 0.5)];
         [borderColor setStroke];
         [divider setLineWidth:1.0];
         [divider stroke];
@@ -309,13 +312,8 @@
             [path closePath];
             break;
 
-        case EauTitleBarButtonPositionRightLeft:
-            // Minimize button: NO rounding at all (middle button, both edges face title)
-            [path appendBezierPathWithRect:frame];
-            break;
-
-        case EauTitleBarButtonPositionRightRight:
-            // Maximize button: ONLY top-right corner rounded, inner edge (left) is straight
+        case EauTitleBarButtonPositionRightTop:
+            // Zoom button (top of stack): ONLY top-right corner rounded
             [path moveToPoint:NSMakePoint(NSMinX(frame), NSMinY(frame))];  // bottom-left
             [path lineToPoint:NSMakePoint(NSMaxX(frame), NSMinY(frame))];  // bottom-right
             [path lineToPoint:NSMakePoint(NSMaxX(frame), NSMaxY(frame) - radius)];  // up right edge to arc
@@ -323,8 +321,13 @@
                                              radius:radius
                                          startAngle:0
                                            endAngle:90];  // top-right corner
-            [path lineToPoint:NSMakePoint(NSMinX(frame), NSMaxY(frame))];  // straight inner edge (left)
+            [path lineToPoint:NSMakePoint(NSMinX(frame), NSMaxY(frame))];  // straight left edge
             [path closePath];
+            break;
+
+        case EauTitleBarButtonPositionRightBottom:
+            // Minimize button (bottom of stack): NO rounding (interior button)
+            [path appendBezierPathWithRect:frame];
             break;
     }
 

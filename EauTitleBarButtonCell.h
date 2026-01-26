@@ -14,9 +14,9 @@ typedef NS_ENUM(NSInteger, EauTitleBarButtonType) {
 
 // Position in the titlebar
 typedef NS_ENUM(NSInteger, EauTitleBarButtonPosition) {
-    EauTitleBarButtonPositionLeft = 0,    // Close button - left edge
-    EauTitleBarButtonPositionRightLeft,   // Minimize - left side of right region
-    EauTitleBarButtonPositionRightRight   // Maximize - right side of right region
+    EauTitleBarButtonPositionLeft = 0,      // Close button - left edge
+    EauTitleBarButtonPositionRightTop,      // Zoom (+) - top of stacked region
+    EauTitleBarButtonPositionRightBottom    // Minimize (-) - bottom of stacked region
 };
 
 @interface EauTitleBarButtonCell : NSButtonCell

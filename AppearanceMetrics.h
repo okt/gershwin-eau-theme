@@ -100,6 +100,10 @@ static const float METRICS_TITLEBAR_BUTTON_INNER_RADIUS = 5.0;      // Rounded c
 static const float METRICS_TITLEBAR_ICON_STROKE = 1.5;              // Stroke width for button icons
 static const float METRICS_TITLEBAR_ICON_INSET = 8.0;               // Inset from button edges to icon
 
+// Stacked titlebar button metrics (zoom/minimize on right)
+static const float METRICS_TITLEBAR_STACKED_REGION_WIDTH = 28.0;    // Same width as close button
+static const float METRICS_TITLEBAR_STACKED_BUTTON_HEIGHT = 12.0;   // Half of titlebar height
+
 // Control Positioning in Dialogs
 // All spacing between dialog elements shall be a multiple of 4px (4, 8, 12, 16, 20, or 24).
 // Guidelines:

@@ -85,32 +85,31 @@ static char originalFrameKey;  // Store original frame before zoom
     }
   }
 
-  // Miniaturize button at left side of right region
+  // Miniaturize button at BOTTOM half of stacked region on right
   if (hasMiniaturizeButton)
   {
-    CGFloat rightRegionX = viewWidth - METRICS_TITLEBAR_RIGHT_REGION_WIDTH;
-    CGFloat buttonWidth = METRICS_TITLEBAR_RIGHT_REGION_WIDTH / 2.0;
+    CGFloat x = viewWidth - METRICS_TITLEBAR_STACKED_REGION_WIDTH;
+    CGFloat y = titleBarY;  // Bottom half starts at titlebar Y
     miniaturizeButtonRect = NSMakeRect(
-      rightRegionX,
-      titleBarY,
-      buttonWidth, METRICS_TITLEBAR_HEIGHT);
+      x, y,
+      METRICS_TITLEBAR_STACKED_REGION_WIDTH, METRICS_TITLEBAR_STACKED_BUTTON_HEIGHT);
     [miniaturizeButton setFrame: miniaturizeButtonRect];
 
     // Update to use new button style if it's an EauTitleBarButton
     if ([miniaturizeButton isKindOfClass:[EauTitleBarButton class]]) {
       [(EauTitleBarButton *)miniaturizeButton setTitleBarButtonType:EauTitleBarButtonTypeMinimize];
-      [(EauTitleBarButton *)miniaturizeButton setTitleBarButtonPosition:EauTitleBarButtonPositionRightLeft];
+      [(EauTitleBarButton *)miniaturizeButton setTitleBarButtonPosition:EauTitleBarButtonPositionRightBottom];
     }
   }
 
-  // Zoom button at right side of right region
+  // Zoom button at TOP half of stacked region on right
   if ([self hasZoomButton])
   {
-    CGFloat buttonWidth = METRICS_TITLEBAR_RIGHT_REGION_WIDTH / 2.0;
+    CGFloat x = viewWidth - METRICS_TITLEBAR_STACKED_REGION_WIDTH;
+    CGFloat y = titleBarY + METRICS_TITLEBAR_STACKED_BUTTON_HEIGHT;  // Top half
     NSRect zoomButtonRect = NSMakeRect(
-      viewWidth - buttonWidth,
-      titleBarY,
-      buttonWidth, METRICS_TITLEBAR_HEIGHT);
+      x, y,
+      METRICS_TITLEBAR_STACKED_REGION_WIDTH, METRICS_TITLEBAR_STACKED_BUTTON_HEIGHT);
 
     // Store the rect as associated object
     NSValue *rectValue = [NSValue valueWithRect:zoomButtonRect];
@@ -133,7 +132,7 @@ static char originalFrameKey;  // Store original frame before zoom
       // Update button properties if it's the new type
       if ([zoomButton isKindOfClass:[EauTitleBarButton class]]) {
         [(EauTitleBarButton *)zoomButton setTitleBarButtonType:EauTitleBarButtonTypeMaximize];
-        [(EauTitleBarButton *)zoomButton setTitleBarButtonPosition:EauTitleBarButtonPositionRightRight];
+        [(EauTitleBarButton *)zoomButton setTitleBarButtonPosition:EauTitleBarButtonPositionRightTop];
       }
 
       // Ensure the button is attached

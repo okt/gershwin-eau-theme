@@ -27,7 +27,7 @@
 {
     EauTitleBarButton *button = [[EauTitleBarButton alloc] init];
     button.titleBarButtonType = EauTitleBarButtonTypeMinimize;
-    button.titleBarButtonPosition = EauTitleBarButtonPositionRightLeft;
+    button.titleBarButtonPosition = EauTitleBarButtonPositionRightBottom;
     [button setTag:NSWindowMiniaturizeButton];
     return button;
 }
@@ -36,7 +36,7 @@
 {
     EauTitleBarButton *button = [[EauTitleBarButton alloc] init];
     button.titleBarButtonType = EauTitleBarButtonTypeMaximize;
-    button.titleBarButtonPosition = EauTitleBarButtonPositionRightRight;
+    button.titleBarButtonPosition = EauTitleBarButtonPositionRightTop;
     [button setTag:NSWindowZoomButton];
     return button;
 }
