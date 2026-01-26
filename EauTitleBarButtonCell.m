@@ -235,7 +235,7 @@
 
         case EauTitleBarButtonTypeMinimize: {
             // Horizontal line (minus symbol)
-            CGFloat inset = NSWidth(iconRect) * 0.2;
+            CGFloat inset = NSWidth(iconRect) * 0.15;  // Match close icon inset
             CGFloat midY = NSMidY(iconRect);
             [iconPath moveToPoint:NSMakePoint(NSMinX(iconRect) + inset, midY)];
             [iconPath lineToPoint:NSMakePoint(NSMaxX(iconRect) - inset, midY)];
@@ -244,7 +244,7 @@
 
         case EauTitleBarButtonTypeMaximize: {
             // Plus symbol
-            CGFloat inset = NSWidth(iconRect) * 0.2;
+            CGFloat inset = NSWidth(iconRect) * 0.15;  // Match close icon inset
             CGFloat midX = NSMidX(iconRect);
             CGFloat midY = NSMidY(iconRect);
             // Horizontal line
