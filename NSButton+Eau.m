@@ -23,44 +23,69 @@
 #import "NSButton+Eau.h"
 #import "Eau.h"
 #import <AppKit/AppKit.h>
+#import <objc/runtime.h>
 
-@implementation NSButton(EauKeyboardHandling)
+@implementation NSButton (EauKeyboardHandling)
+
++ (void) load
+{
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    Class cls = [NSButton class];
+    SEL origSelector = @selector(keyDown:);
+    SEL swizSelector = @selector(eau_keyDown:);
+    
+    Method origMethod = class_getInstanceMethod(cls, origSelector);
+    Method swizMethod = class_getInstanceMethod(cls, swizSelector);
+    
+    // Attempt to add the method first in case NSButton doesn't implement it directly
+    BOOL didAddMethod = class_addMethod(cls,
+                                        origSelector,
+                                        method_getImplementation(swizMethod),
+                                        method_getTypeEncoding(swizMethod));
+    
+    if (didAddMethod)
+      {
+        class_replaceMethod(cls,
+                            swizSelector,
+                            method_getImplementation(origMethod),
+                            method_getTypeEncoding(origMethod));
+      }
+    else
+      {
+        method_exchangeImplementations(origMethod, swizMethod);
+      }
+  });
+}
 
 /**
- * Override keyDown to ensure spacebar activates buttons with focus ring.
- * This is critical for keyboard accessibility - when a button has keyboard focus
- * (shown by the focus ring), pressing spacebar should activate it.
+ * Swizzled keyDown to ensure spacebar activates buttons with focus ring.
  */
-- (void) keyDown: (NSEvent*)theEvent
+- (void) eau_keyDown: (NSEvent*)theEvent
 {
   NSString *characters = [theEvent characters];
-  
-  EAULOG(@"NSButton+Eau: keyDown received for button '%@', enabled: %d, characters: '%@'", 
-         [self title], [self isEnabled], characters);
   
   if ([self isEnabled] && [characters length] > 0)
     {
       unichar keyChar = [characters characterAtIndex: 0];
       
-      // Handle spacebar - this is the key requirement for focus ring interaction
+      // Handle spacebar - critical for focus ring interaction
       if (keyChar == ' ' || keyChar == 0x20)
         {
-          EAULOG(@"NSButton+Eau: Spacebar pressed on button '%@', performing click", [self title]);
           [self performClick: self];
           return;
         }
       
-      // Handle Enter/Return key as well for default buttons
+      // Handle Enter/Return
       if (keyChar == '\r' || keyChar == '\n' || keyChar == 0x03)
         {
-          EAULOG(@"NSButton+Eau: Enter/Return pressed on button '%@', performing click", [self title]);
           [self performClick: self];
           return;
         }
     }
   
-  // Pass through to super for any other keys
-  [super keyDown: theEvent];
+  // Call the original implementation (which now points to eau_keyDown)
+  [self eau_keyDown: theEvent];
 }
 
 @end
