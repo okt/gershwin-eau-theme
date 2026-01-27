@@ -154,17 +154,22 @@
 {
     if (!color) return;
 
+    // Detect stacked button (small height) - use bolder/bigger icon
+    BOOL isStacked = (NSHeight(rect) < 10);
+    CGFloat strokeWidth = isStacked ? 2.0 : METRICS_TITLEBAR_ICON_STROKE;
+    CGFloat insetFactor = isStacked ? 0.05 : 0.15;  // Less inset = bigger icon for stacked
+
     CGFloat extraHInset = (NSWidth(rect) - NSHeight(rect)) / 2.0;
     if (extraHInset > 0) {
         rect = NSInsetRect(rect, extraHInset, 0);
     }
 
     NSBezierPath *path = [NSBezierPath bezierPath];
-    [path setLineWidth:METRICS_TITLEBAR_ICON_STROKE];
+    [path setLineWidth:strokeWidth];
     [path setLineCapStyle:NSRoundLineCapStyle];
 
     // Horizontal line (minus symbol)
-    CGFloat inset = NSWidth(rect) * 0.15;  // Match close icon inset for consistent sizing
+    CGFloat inset = NSWidth(rect) * insetFactor;
     CGFloat midY = NSMidY(rect);
     [path moveToPoint:NSMakePoint(NSMinX(rect) + inset, midY)];
     [path lineToPoint:NSMakePoint(NSMaxX(rect) - inset, midY)];
@@ -177,17 +182,22 @@
 {
     if (!color) return;
 
+    // Detect stacked button (small height) - use bolder/bigger icon
+    BOOL isStacked = (NSHeight(rect) < 10);
+    CGFloat strokeWidth = isStacked ? 2.0 : METRICS_TITLEBAR_ICON_STROKE;
+    CGFloat insetFactor = isStacked ? 0.05 : 0.15;  // Less inset = bigger icon for stacked
+
     CGFloat extraHInset = (NSWidth(rect) - NSHeight(rect)) / 2.0;
     if (extraHInset > 0) {
         rect = NSInsetRect(rect, extraHInset, 0);
     }
 
     NSBezierPath *path = [NSBezierPath bezierPath];
-    [path setLineWidth:METRICS_TITLEBAR_ICON_STROKE];
+    [path setLineWidth:strokeWidth];
     [path setLineCapStyle:NSRoundLineCapStyle];
 
     // Plus symbol
-    CGFloat inset = NSWidth(rect) * 0.15;  // Match close icon inset for consistent sizing
+    CGFloat inset = NSWidth(rect) * insetFactor;
     CGFloat midX = NSMidX(rect);
     CGFloat midY = NSMidY(rect);
 

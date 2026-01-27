@@ -218,13 +218,16 @@
 
     [iconColor setStroke];
 
+    // Detect stacked button (small height) - use bolder/bigger icon for +/-
+    BOOL isStacked = (NSHeight(iconRect) < 10);
+
     NSBezierPath *iconPath = [NSBezierPath bezierPath];
-    [iconPath setLineWidth:METRICS_TITLEBAR_ICON_STROKE];
     [iconPath setLineCapStyle:NSRoundLineCapStyle];
 
     switch (_buttonType) {
         case EauTitleBarButtonTypeClose: {
             // Lowercase x style - shorter strokes, more square
+            [iconPath setLineWidth:METRICS_TITLEBAR_ICON_STROKE];
             CGFloat inset = NSWidth(iconRect) * 0.15;
             [iconPath moveToPoint:NSMakePoint(NSMinX(iconRect) + inset, NSMinY(iconRect) + inset)];
             [iconPath lineToPoint:NSMakePoint(NSMaxX(iconRect) - inset, NSMaxY(iconRect) - inset)];
@@ -234,8 +237,11 @@
         }
 
         case EauTitleBarButtonTypeMinimize: {
-            // Horizontal line (minus symbol)
-            CGFloat inset = NSWidth(iconRect) * 0.15;  // Match close icon inset
+            // Horizontal line (minus symbol) - bolder for stacked
+            CGFloat strokeWidth = isStacked ? 2.0 : METRICS_TITLEBAR_ICON_STROKE;
+            CGFloat insetFactor = isStacked ? 0.05 : 0.15;
+            [iconPath setLineWidth:strokeWidth];
+            CGFloat inset = NSWidth(iconRect) * insetFactor;
             CGFloat midY = NSMidY(iconRect);
             [iconPath moveToPoint:NSMakePoint(NSMinX(iconRect) + inset, midY)];
             [iconPath lineToPoint:NSMakePoint(NSMaxX(iconRect) - inset, midY)];
@@ -243,8 +249,11 @@
         }
 
         case EauTitleBarButtonTypeMaximize: {
-            // Plus symbol
-            CGFloat inset = NSWidth(iconRect) * 0.15;  // Match close icon inset
+            // Plus symbol - bolder for stacked
+            CGFloat strokeWidth = isStacked ? 2.0 : METRICS_TITLEBAR_ICON_STROKE;
+            CGFloat insetFactor = isStacked ? 0.05 : 0.15;
+            [iconPath setLineWidth:strokeWidth];
+            CGFloat inset = NSWidth(iconRect) * insetFactor;
             CGFloat midX = NSMidX(iconRect);
             CGFloat midY = NSMidY(iconRect);
             // Horizontal line
